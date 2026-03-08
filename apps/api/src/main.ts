@@ -104,8 +104,11 @@ async function bootstrap() {
 
         // global auth guard — exempt public routes
         const PUBLIC_ROUTES = new Set(['/api/health', '/api/version', '/api/auth/login']);
+        const PUBLIC_PREFIXES = ['/api/locales/'];
         app.addHook('onRequest', async (request, reply) => {
-            if (PUBLIC_ROUTES.has(request.url.split('?')[0])) return;
+            const path = request.url.split('?')[0];
+            if (PUBLIC_ROUTES.has(path)) return;
+            if (PUBLIC_PREFIXES.some((p) => path.startsWith(p))) return;
             try {
                 await request.jwtVerify();
             } catch (err) {
