@@ -1,114 +1,159 @@
 # paperless-llm
 
-A TypeScript monorepo that automatically enriches [paperless-ngx](https://github.com/paperless-ngx/paperless-ngx) documents using LLMs — assigns titles, tags, correspondents, document types, dates, and optional summaries through a composable pipeline.
+> Let AI organize your documents — so you don't have to.
 
-Inspired by [paperless-gpt](https://github.com/icereed/paperless-gpt), rebuilt from scratch with TypeScript, SOLID principles, and a full web UI.
+**paperless-llm** connects to your [paperless-ngx](https://github.com/paperless-ngx/paperless-ngx) instance and uses a large language model of your choice to automatically suggest titles, tags, correspondents, document types, creation dates, and summaries for your documents. You review the suggestions in a clean web UI and apply them with a single click.
+
+---
+
+## What it does
+
+Tag a document with `paperless-llm` in paperless-ngx — that's it. paperless-llm picks it up, analyzes the content, and presents you with AI-generated metadata suggestions. You stay in control: nothing is written back until you approve it.
+
+**Suggested metadata:**
+- 📄 Title
+- 🏷️ Tags
+- 👤 Correspondent
+- 📁 Document type
+- 📅 Creation date
+- 📝 Summary *(optional)*
 
 ---
 
 ## Features
 
-| Feature | Detail |
-|---|---|
-| **Multi-provider LLM** | OpenAI, Anthropic, Mistral, Google Gemini, Ollama |
-| **Multi-mode OCR** | LLM Vision, Azure Document Intelligence, Docling |
-| **Composable pipeline** | Each stage is independently enable/disable-able |
-| **Customisable prompts** | Handlebars templates, editable from the UI with hot-reload |
-| **Job queue** | BullMQ + Redis — retries, progress, SSE live feed |
-| **i18n** | English + German (`en` / `de`), easily extendable |
-| **SOLID architecture** | DI composition root, provider registries (OCP), split interfaces (ISP) |
-| **React web UI** | Dashboard, document review, job monitor, analysis, prompt editor |
+- **Works with your preferred LLM** — OpenAI, Anthropic, Mistral, Google Gemini, or a self-hosted Ollama model
+- **Multiple OCR options** — use the existing text layer, LLM vision, Azure Document Intelligence, or a self-hosted Docling server
+- **Review before applying** — all suggestions are shown in the web UI before anything is written back to paperless-ngx
+- **Customizable prompts** — edit the prompts used for each metadata field directly in the UI, no restart required
+- **Auto-processing mode** — optionally skip the review step and apply suggestions automatically
+- **Live job monitor** — watch documents being processed in real time
+- **English & German UI** — more languages can be added easily
 
 ---
 
-## Architecture
+## Getting started
 
-```
-paperless-llm/
-├── apps/
-│   ├── api/        # Fastify 5 + BullMQ + Drizzle (SQLite)
-│   └── web/        # React 19 + Vite + Tailwind
-└── packages/
-    └── shared/     # Types, Zod schemas, i18n locale files
-```
+### Prerequisites
 
----
+- A running [paperless-ngx](https://github.com/paperless-ngx/paperless-ngx) instance
+- Docker & Docker Compose
+- An API key for your LLM provider (or a local Ollama setup)
 
-## Quick start (Docker)
+### 1 — Configure
+
+Copy the example environment file and fill in your details:
 
 ```bash
-cp apps/api/.env.example .env
-# edit .env — add PAPERLESS_URL, PAPERLESS_TOKEN, and your LLM provider key
+cp .env.example .env
+```
+
+Open `.env` and set at minimum:
+
+```dotenv
+# Your paperless-ngx instance
+PAPERLESS_BASE_URL=http://your-paperless-host:8000
+PAPERLESS_API_TOKEN=your-token-here    # Settings → API Tokens in paperless-ngx
+
+# Your LLM provider
+LLM_PROVIDER=openai                    # openai | anthropic | mistral | ollama
+LLM_MODEL=gpt-4o-mini
+OPENAI_API_KEY=sk-...
+```
+
+### 2 — Run
+
+```bash
 docker compose up -d
 ```
 
-- Web UI → http://localhost:3000
-- API    → http://localhost:8080/api/health
+Open **http://localhost:3000** — the web UI is ready.
+
+> **Tip:** The `docker-compose.yml` also includes a full paperless-ngx stack (with Postgres, Redis, Gotenberg & Tika) if you don't have one yet.
+
+### 3 — Process a document
+
+1. In paperless-ngx, add the tag **`paperless-llm`** to any document.
+2. paperless-llm picks it up automatically (checks every 60 seconds by default).
+3. Open the **Documents** page in the web UI to review and apply the suggestions.
 
 ---
 
-## Quick start (local dev)
+## LLM providers
 
-**Prerequisites**: Node ≥ 22, PNPM ≥ 9, Redis running locally.
+Set `LLM_PROVIDER` and the matching API key in your `.env`:
+
+| Provider | `LLM_PROVIDER` value | Required variable |
+|---|---|---|
+| OpenAI | `openai` | `OPENAI_API_KEY` |
+| Anthropic | `anthropic` | `ANTHROPIC_API_KEY` |
+| Mistral | `mistral` | `MISTRAL_API_KEY` |
+| Google Gemini | `google` | `GOOGLE_GENERATIVE_AI_API_KEY` |
+| Ollama (local) | `ollama` | `OLLAMA_HOST`, `OLLAMA_MODEL` |
+
+---
+
+## OCR options
+
+If your documents don't have a text layer (e.g. scanned PDFs), you can enable OCR:
+
+| `OCR_PROVIDER` value | Description |
+|---|---|
+| *(not set)* | Use the existing text layer only |
+| `llm` | Send page images to your vision-capable LLM |
+| `azure-document-intelligence` | Azure AI Document Intelligence |
+| `docling` | Self-hosted [Docling](https://github.com/DS4SD/docling) server |
+
+---
+
+## Authentication
+
+The web UI is protected by a login screen. paperless-llm does **not** manage its own users — it delegates authentication to your paperless-ngx instance. Use the same username and password you use to log in to paperless-ngx.
+
+A JWT is issued on successful login and is valid for 8 hours.
+
+To secure the API you must set a strong `JWT_SECRET` in your `.env`:
 
 ```bash
-pnpm install
-cp apps/api/.env.example apps/api/.env
-# edit apps/api/.env
-
-pnpm dev   # starts both api (port 8080) and web (port 3000) via Turborepo
+openssl rand -hex 32
 ```
 
----
-
-## LLM Providers
-
-Set `LLM_PROVIDER` in `.env`:
-
-| Value | Required env var |
-|---|---|
-| `openai` | `OPENAI_API_KEY` |
-| `anthropic` | `ANTHROPIC_API_KEY` |
-| `mistral` | `MISTRAL_API_KEY` |
-| `google` | `GOOGLE_GENERATIVE_AI_API_KEY` |
-| `ollama` | `OLLAMA_BASE_URL`, `OLLAMA_MODEL` |
+Set `AUTH_ENABLED=false` to disable authentication entirely (development only — never expose this publicly).
 
 ---
 
-## OCR Modes
+## Configuration reference
 
-Set `OCR_MODE` in `.env`:
+All settings are controlled via environment variables in `.env`. Key options:
 
-| Value | Description |
-|---|---|
-| `none` | Use existing text layer only |
-| `llm-vision` | Pages → JPEG → vision LLM |
-| `azure-document-intelligence` | Azure AI Form Recognizer |
-| `docling` | Self-hosted Docling server |
+| Variable | Default | Description |
+|---|---|---|
+| `PAPERLESS_BASE_URL` | — | URL of your paperless-ngx instance |
+| `PAPERLESS_API_TOKEN` | — | paperless-ngx API token |
+| `MANUAL_TAG` | `paperless-llm` | Tag to trigger manual review processing |
+| `AUTO_TAG` | `paperless-llm-auto` | Tag to trigger fully automatic processing |
+| `PROCESSED_TAG` | `paperless-llm-processed` | Tag added after suggestions are applied |
+| `LLM_PROVIDER` | — | LLM provider to use |
+| `LLM_MODEL` | — | Model name |
+| `OCR_PROVIDER` | — | OCR provider (leave unset to skip OCR) |
+| `POLL_INTERVAL_SECONDS` | `30` | How often to check for new documents |
+| `AUTH_ENABLED` | `true` | Enable/disable login protection |
+| `JWT_SECRET` | — | Secret for signing JWTs (min 32 chars, required when auth is enabled) |
 
----
-
-## How it works
-
-1. **Polling service** scans paperless-ngx every `POLLING_INTERVAL_SECONDS` for documents tagged with `PAPERLESS_PROCESS_TAG`.
-2. Each document is enqueued as a **BullMQ job**.
-3. The **metadata worker** runs the configurable **pipeline**:
-   - `OcrStage` → downloads PDF, runs OCR if configured
-   - `TitleStage`, `TagsStage`, `CorrespondentStage`, `DocumentTypeStage`, `CreatedDateStage`, `SummaryStage` — each renders its Handlebars prompt and calls the LLM
-4. Suggestions are stored in SQLite. The user **reviews** them in the web UI, then **applies** them back to paperless-ngx.
+See `.env.example` for the full list including per-stage enable/disable toggles.
 
 ---
 
-## i18n
+## Contributing
 
-Locale files live in `packages/shared/src/locales/`. Add a new locale by creating `<lang>.json` with the same keys and adding the language code to the `supportedLngs` array in both `apps/api/src/config/i18n.ts` and `apps/web/src/i18n.ts`.
+Contributions are welcome! Please open an issue to discuss larger changes before submitting a pull request.
+
+- **Bug reports & feature requests** → [GitHub Issues](../../issues)
+- **Pull requests** → target the `main` branch
 
 ---
 
-## SOLID highlights
+## License
 
-- **SRP** — `PaperlessClient` only talks to paperless-ngx; `PromptEngine` only handles Handlebars; each `*Stage` only implements one extraction task.
-- **OCP** — LLM and OCR providers are registered in Maps; adding a new provider requires zero changes to existing code.
-- **LSP** — All LLM providers are interchangeable via `TextLLMProvider` / `VisionLLMProvider` interfaces.
-- **ISP** — Text and vision capabilities are separate interfaces; providers implement only what they support.
-- **DIP** — `main.ts` is the sole composition root; every module receives its dependencies injected rather than importing singletons.
+MIT
+

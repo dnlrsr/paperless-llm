@@ -4,6 +4,7 @@
  * All other modules receive dependencies via constructor injection.
  */
 import cors from '@fastify/cors';
+import jwt from '@fastify/jwt';
 import sensible from '@fastify/sensible';
 import Fastify from 'fastify';
 import { Redis } from 'ioredis';
@@ -25,6 +26,7 @@ import { createOcrProvider, validateOcrModeCompatibility } from './providers/ocr
 import { SseService } from './sse/sse.service.js';
 
 import { analysisRoutes } from './routes/analysis.routes.js';
+import { authRoutes } from './routes/auth.routes.js';
 import { documentRoutes } from './routes/documents.routes.js';
 import { healthRoutes } from './routes/health.routes.js';
 import { jobRoutes } from './routes/jobs.routes.js';
@@ -84,8 +86,44 @@ async function bootstrap() {
     await app.register(cors, { origin: true });
     await app.register(sensible);
 
+    // ── JWT auth (skip if AUTH_ENABLED is false) ──────────────────────
+    if (config.AUTH_ENABLED) {
+        if (!config.JWT_SECRET) {
+            throw new Error('JWT_SECRET must be set (min 32 chars) when AUTH_ENABLED=true');
+        }
+        await app.register(jwt, { secret: config.JWT_SECRET });
+
+        // authenticate decorator used by individual routes
+        app.decorate('authenticate', async (request: import('fastify').FastifyRequest, reply: import('fastify').FastifyReply) => {
+            try {
+                await request.jwtVerify();
+            } catch (err) {
+                reply.send(err);
+            }
+        });
+
+        // global auth guard — exempt public routes
+        const PUBLIC_ROUTES = new Set(['/api/health', '/api/version', '/api/auth/login']);
+        const PUBLIC_PREFIXES = ['/api/locales/'];
+        app.addHook('onRequest', async (request, reply) => {
+            const path = request.url.split('?')[0];
+            if (PUBLIC_ROUTES.has(path)) return;
+            if (PUBLIC_PREFIXES.some((p) => path.startsWith(p))) return;
+            try {
+                await request.jwtVerify();
+            } catch (err) {
+                reply.send(err);
+            }
+        });
+    } else {
+        // Provide a no-op authenticate decorator so route handlers compile
+        app.decorate('authenticate', async () => { });
+        log.warn('AUTH_ENABLED=false — API is unprotected');
+    }
+
     const apiPrefix = '/api';
 
+    await app.register(authRoutes, { prefix: apiPrefix, config });
     await app.register(healthRoutes, { prefix: apiPrefix, paperlessClient, redis, db, version: getVersion(), config });
     await app.register(documentRoutes, { prefix: apiPrefix, db, paperlessClient, queues, sse, config });
     await app.register(jobRoutes, { prefix: apiPrefix, queues, sse });

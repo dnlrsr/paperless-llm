@@ -10,4 +10,3 @@ prompts/
 .env.local
 *.tsbuildinfo
 coverage/
-docker-compose.yml
