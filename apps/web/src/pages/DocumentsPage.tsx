@@ -256,9 +256,38 @@ function DocumentRow({ doc, expanded, onToggle }: {
               )}
             </dl>
           )}
+
+          {/* Original document text */}
+          {doc.content && <OriginalText content={doc.content} />}
         </div>
       )}
     </Card>
+  );
+}
+
+// ─── Original text component ─────────────────────────────────────────────────
+
+function OriginalText({ content }: { content: string }) {
+  const { t } = useTranslation();
+  const [open, setOpen] = useState(false);
+
+  return (
+    <div className="border-t border-gray-100 pt-3">
+      <button
+        onClick={() => setOpen((v) => !v)}
+        className="flex items-center gap-1.5 text-xs font-medium text-gray-400 hover:text-gray-600 transition-colors select-none"
+      >
+        {open
+          ? <ChevronDown size={13} />
+          : <ChevronRight size={13} />}
+        {t('documents.originalText')}
+      </button>
+      {open && (
+        <pre className="mt-2 max-h-64 overflow-y-auto rounded border border-gray-100 bg-gray-50 p-3 text-[11px] leading-relaxed text-gray-600 whitespace-pre-wrap font-mono">
+          {content}
+        </pre>
+      )}
+    </div>
   );
 }
 

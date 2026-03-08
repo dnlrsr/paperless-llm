@@ -76,6 +76,7 @@
         "jobProcessing": "Verarbeitung…",
         "jobCompleted": "Fertig",
         "jobFailed": "Fehlgeschlagen",
+        "originalText": "Originaltext",
         "fields": {
             "title": "Titel",
             "tags": "Tags",
