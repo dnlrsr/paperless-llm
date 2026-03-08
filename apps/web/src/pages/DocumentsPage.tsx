@@ -7,6 +7,7 @@ import { Badge, Button, Card, EmptyState, Spinner } from '../components/ui';
 import { DOCUMENTS_KEY, useApplySuggestions, useDeleteSuggestions, useDocumentSuggestions, useGenerateDocument, usePendingDocuments } from '../hooks/useDocuments';
 import { useActiveJob } from '../hooks/useJobs';
 import { cn, formatDate, truncate } from '../lib/utils';
+import { useUISettings } from '../store';
 
 // ─── Stage definitions ────────────────────────────────────────────────────────
 
@@ -102,6 +103,15 @@ function DocumentRow({ doc, expanded, onToggle }: {
   const [selectedStages, setSelectedStages] = useState<string[]>(DEFAULT_STAGES);
   const [activeJobId, setActiveJobId] = useState<string | null>(null);
 
+  // Inherit the global default, but allow per-row override
+  const { useExistingOnly: globalUseExistingOnly } = useUISettings();
+  const [useExistingOnly, setUseExistingOnly] = useState<boolean>(globalUseExistingOnly);
+
+  // Keep in sync when global setting changes (only if user hasn't explicitly toggled for this row)
+  useEffect(() => {
+    setUseExistingOnly(globalUseExistingOnly);
+  }, [globalUseExistingOnly]);
+
   const generate = useGenerateDocument();
   const apply = useApplySuggestions();
   const deleteSuggestions = useDeleteSuggestions();
@@ -138,7 +148,6 @@ function DocumentRow({ doc, expanded, onToggle }: {
     );
   }
 
-  const ocrSelected = selectedStages.includes('ocr');
   const generating = generate.isPending && generate.variables?.id === doc.id;
   const applying = apply.isPending && apply.variables === doc.id;
   const jobRunning = !!activeJobId && activeJob?.status !== 'completed' && activeJob?.status !== 'failed';
@@ -167,6 +176,7 @@ function DocumentRow({ doc, expanded, onToggle }: {
             <div className="flex flex-wrap gap-1.5">
               {STAGES.map((stage) => {
                 const active = selectedStages.includes(stage.id);
+                const ocrActive = selectedStages.includes('ocr');
                 return (
                   <button
                     key={stage.id}
@@ -186,14 +196,34 @@ function DocumentRow({ doc, expanded, onToggle }: {
                     {t(stage.labelKey)}
                   </button>
                 );
+                void ocrActive;
               })}
             </div>
-            {ocrSelected && (
+            {selectedStages.includes('ocr') && (
               <p className="text-xs text-amber-600 flex items-center gap-1">
                 <Zap size={11} />
                 {t('documents.ocrWarning')}
               </p>
             )}
+          </div>
+
+          {/* Use existing items only — per-row toggle */}
+          <div className="flex items-center gap-3">
+            <button
+              role="switch"
+              aria-checked={useExistingOnly}
+              onClick={() => setUseExistingOnly((v) => !v)}
+              className={`relative inline-flex h-5 w-9 shrink-0 rounded-full border-2 border-transparent transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 ${
+                useExistingOnly ? 'bg-primary-500' : 'bg-gray-200'
+              }`}
+            >
+              <span
+                className={`pointer-events-none inline-block h-4 w-4 rounded-full bg-white shadow ring-0 transition-transform ${
+                  useExistingOnly ? 'translate-x-4' : 'translate-x-0'
+                }`}
+              />
+            </button>
+            <span className="text-xs text-gray-600">{t('documents.useExistingOnly')}</span>
           </div>
 
           {/* Action buttons */}
@@ -202,7 +232,7 @@ function DocumentRow({ doc, expanded, onToggle }: {
               variant="primary"
               loading={generating || suggestionsLoading}
               disabled={selectedStages.length === 0 || jobRunning || suggestionsLoading}
-              onClick={() => generate.mutate({ id: doc.id, stages: selectedStages })}
+              onClick={() => generate.mutate({ id: doc.id, stages: selectedStages, useExistingOnly })}
             >
               <RefreshCw size={14} /> {t('documents.generate')}
             </Button>

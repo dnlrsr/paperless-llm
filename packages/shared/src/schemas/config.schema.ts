@@ -84,6 +84,9 @@ export const AppConfigSchema = z.object({
     AUTO_GENERATE_CREATED_DATE: z.coerce.boolean().default(true),
     AUTO_GENERATE_CUSTOM_FIELDS: z.coerce.boolean().default(false),
 
+    // Restrict suggestions to items that already exist in paperless-ngx
+    USE_EXISTING_DATA_ONLY: z.coerce.boolean().default(true),
+
     CORRESPONDENT_BLACK_LIST: z
         .string()
         .transform((val) => val.split(',').map((s) => s.trim()).filter(Boolean))

@@ -99,10 +99,11 @@ export const documentRoutes: FastifyPluginAsync<DocumentsDeps> = async (fastify,
 
             const parsed = GenerateRequestSchema.safeParse(req.body);
             const stages = parsed.success ? (parsed.data.stages ?? []) : [];
+            const useExistingOnly = parsed.success ? parsed.data.useExistingOnly : undefined;
 
             const job = await queues.metadata.add(
                 'metadata',
-                { documentId, mode: 'manual', stages },
+                { documentId, mode: 'manual', stages, useExistingOnly },
                 { jobId: `manual-${documentId}-${Date.now()}` },
             );
 

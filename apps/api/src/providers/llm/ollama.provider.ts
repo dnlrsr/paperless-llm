@@ -11,9 +11,9 @@ export class OllamaProvider implements TextLLMProvider, VisionLLMProvider {
 
     constructor(config: Pick<AppConfig, 'OLLAMA_HOST' | 'LLM_MODEL'>) {
         this.modelName = config.LLM_MODEL;
-        this.client = createOllama({
-            baseURL: config.OLLAMA_HOST ?? 'http://localhost:11434/api',
-        });
+        const rawHost = config.OLLAMA_HOST ?? 'http://localhost:11434';
+        const baseURL = rawHost.endsWith('/api') ? rawHost : `${rawHost.replace(/\/$/, '')}/api`;
+        this.client = createOllama({ baseURL });
     }
 
     async generateText(systemPrompt: string, userPrompt: string, options?: LLMOptions): Promise<string> {

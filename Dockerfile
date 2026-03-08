@@ -66,11 +66,11 @@ RUN corepack enable && corepack prepare pnpm@latest --activate \
  && pnpm install --frozen-lockfile --prod
 
 # ─── API compiled output ──────────────────────────────────────────────────────
-COPY --from=api-builder /repo/packages/shared/dist/       ./packages/shared/dist/
-COPY --from=api-builder /repo/apps/api/dist/              ./apps/api/dist/
-COPY --from=api-builder /repo/default_prompts/            ./default_prompts/
-COPY --from=api-builder /repo/packages/shared/src/locales/ ./packages/shared/src/locales/
-RUN mkdir -p /app/data /app/prompts && chown -R appuser:appgroup /app
+COPY --chown=appuser:appgroup --from=api-builder /repo/packages/shared/dist/       ./packages/shared/dist/
+COPY --chown=appuser:appgroup --from=api-builder /repo/apps/api/dist/              ./apps/api/dist/
+COPY --chown=appuser:appgroup --from=api-builder /repo/default_prompts/            ./default_prompts/
+COPY --chown=appuser:appgroup --from=api-builder /repo/packages/shared/src/locales/ ./packages/shared/src/locales/
+RUN mkdir -p /app/data /app/prompts && chown appuser:appgroup /app/data /app/prompts
 
 # ─── Web static files ─────────────────────────────────────────────────────────
 COPY --from=web-builder /repo/apps/web/dist /usr/share/nginx/html

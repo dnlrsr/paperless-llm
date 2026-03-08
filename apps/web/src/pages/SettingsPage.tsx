@@ -7,7 +7,7 @@ import { useUISettings } from '../store';
 
 export function SettingsPage() {
   const { t } = useTranslation();
-  const { language, setLanguage, pageSize, setPageSize } = useUISettings();
+  const { language, setLanguage, pageSize, setPageSize, useExistingOnly, setUseExistingOnly } = useUISettings();
   const { data: health } = useQuery({ queryKey: ['health'], queryFn: healthApi.get });
 
   function handleLang(lang: 'en' | 'de') {
@@ -55,6 +55,35 @@ export function SettingsPage() {
             <option key={n} value={n}>{n}</option>
           ))}
         </select>
+      </Card>
+
+      {/* Use existing items only */}
+      <Card>
+        <CardHeader>
+          <h2 className="font-semibold text-gray-700">{t('settings.useExistingOnly')}</h2>
+        </CardHeader>
+        <div className="space-y-2">
+          <p className="text-sm text-gray-500">{t('settings.useExistingOnlyDesc')}</p>
+          <label className="flex items-center gap-3 cursor-pointer select-none">
+            <button
+              role="switch"
+              aria-checked={useExistingOnly}
+              onClick={() => setUseExistingOnly(!useExistingOnly)}
+              className={`relative inline-flex h-6 w-11 shrink-0 rounded-full border-2 border-transparent transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 ${
+                useExistingOnly ? 'bg-primary-500' : 'bg-gray-200'
+              }`}
+            >
+              <span
+                className={`pointer-events-none inline-block h-5 w-5 rounded-full bg-white shadow ring-0 transition-transform ${
+                  useExistingOnly ? 'translate-x-5' : 'translate-x-0'
+                }`}
+              />
+            </button>
+            <span className="text-sm font-medium text-gray-700">
+              {useExistingOnly ? t('common.on', 'On') : t('common.off', 'Off')}
+            </span>
+          </label>
+        </div>
       </Card>
 
       {/* System info */}

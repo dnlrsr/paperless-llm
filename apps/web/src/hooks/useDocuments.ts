@@ -30,8 +30,8 @@ export function useGenerateDocument() {
     const { t } = useTranslation();
 
     return useMutation({
-        mutationFn: ({ id, stages }: { id: number; stages?: string[] }) =>
-            documentsApi.generate(id, stages),
+        mutationFn: ({ id, stages, useExistingOnly }: { id: number; stages?: string[]; useExistingOnly?: boolean }) =>
+            documentsApi.generate(id, stages, useExistingOnly),
         onSuccess: () => {
             void qc.invalidateQueries({ queryKey: ['jobs'] });
             push({ kind: 'info', title: t('pipeline.jobQueued') });

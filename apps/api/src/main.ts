@@ -65,6 +65,7 @@ async function bootstrap() {
         paperlessClient,
         promptEngine,
         config,
+        useExistingOnly: config.USE_EXISTING_DATA_ONLY,
     };
 
     // ── 4. Job queue ──────────────────────────────────────────────────

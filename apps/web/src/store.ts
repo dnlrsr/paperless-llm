@@ -38,8 +38,11 @@ export const useNotifications = create<NotificationState>((set) => ({
 interface UISettings {
     language: 'en' | 'de';
     pageSize: number;
+    /** Global default: restrict AI suggestions to items already in paperless-ngx */
+    useExistingOnly: boolean;
     setLanguage: (lang: 'en' | 'de') => void;
     setPageSize: (size: number) => void;
+    setUseExistingOnly: (value: boolean) => void;
 }
 
 export const useUISettings = create<UISettings>()(
@@ -47,8 +50,10 @@ export const useUISettings = create<UISettings>()(
         (set) => ({
             language: 'en',
             pageSize: 25,
+            useExistingOnly: true,
             setLanguage: (language) => set({ language }),
             setPageSize: (pageSize) => set({ pageSize }),
+            setUseExistingOnly: (useExistingOnly) => set({ useExistingOnly }),
         }),
         { name: 'paperless-llm-ui' },
     ),

@@ -28,6 +28,7 @@ export class TagsStage extends BasePipelineStage {
             OriginalTags: originalTagNames,
             Title: ctx.originalMetadata.title,
             Content: truncate(ctx.content, deps.config.TOKEN_LIMIT),
+            UseExistingOnly: deps.useExistingOnly,
         });
 
         const raw = await deps.llmProvider.generateText(
@@ -43,7 +44,8 @@ export class TagsStage extends BasePipelineStage {
                 if (Array.isArray(parsed)) {
                     tags = parsed
                         .filter((t): t is string => typeof t === 'string')
-                        .filter((t) => availableTagNames.includes(t));
+                        // When useExistingOnly, keep only tags that already exist
+                        .filter((t) => !deps.useExistingOnly || availableTagNames.includes(t));
                 }
             } catch {
                 tags = [];

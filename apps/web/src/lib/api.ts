@@ -60,6 +60,7 @@ export interface HealthStatus {
     version: string;
     checks: Record<string, boolean | null>;
     ollamaModel?: string;
+    ollamaError?: string;
 }
 
 export const healthApi = {
@@ -84,10 +85,10 @@ export const documentsApi = {
     getSuggestions: (id: number) =>
         request<DocumentSuggestions>(`/documents/${id}/suggestions`),
 
-    generate: (id: number, stages?: string[]) =>
+    generate: (id: number, stages?: string[], useExistingOnly?: boolean) =>
         request<GenerateResponse>(`/documents/${id}/generate`, {
             method: 'POST',
-            body: JSON.stringify({ stages }),
+            body: JSON.stringify({ stages, useExistingOnly }),
         }),
 
     applyAll: (id: number) =>
