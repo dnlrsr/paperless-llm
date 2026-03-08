@@ -4,7 +4,7 @@ import { AlignLeft, Calendar, Check, ChevronDown, ChevronRight, FileText, Folder
 import { useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Button, Card, EmptyState, Spinner } from '../components/ui';
-import { DOCUMENTS_KEY, useApplySuggestions, useDeleteSuggestions, useDocumentSuggestions, useGenerateDocument, usePaperlessTags, usePatchSuggestions, usePendingDocuments } from '../hooks/useDocuments';
+import { DOCUMENTS_KEY, useApplySuggestions, useDeleteSuggestions, useDocumentSuggestions, useGenerateDocument, usePaperlessCorrespondents, usePaperlessDocumentTypes, usePaperlessTags, usePatchSuggestions, usePendingDocuments } from '../hooks/useDocuments';
 import { useActiveJob } from '../hooks/useJobs';
 import { cn, formatDate } from '../lib/utils';
 import { useUISettings } from '../store';
@@ -394,6 +394,8 @@ function SuggestionsPanel({ docId, suggestions }: { docId: number; suggestions: 
   const dropdownRef = useRef<HTMLDivElement>(null);
   const patch = usePatchSuggestions();
   const { data: allPaperlessTags = [] } = usePaperlessTags();
+  const { data: allCorrespondents = [] } = usePaperlessCorrespondents();
+  const { data: allDocumentTypes = [] } = usePaperlessDocumentTypes();
 
   // Re-sync when suggestions are refreshed (e.g. after re-generate)
   useEffect(() => {
@@ -476,20 +478,22 @@ function SuggestionsPanel({ docId, suggestions }: { docId: number; suggestions: 
           )}
           {edited.correspondent != null && (
             <div className="bg-gray-50/60">
-              <EditableField
+              <SelectableField
                 label={t('documents.fields.correspondent')}
                 value={edited.correspondent}
                 icon={<User size={11} />}
+                options={allCorrespondents.map((c) => c.name)}
                 onSave={(v) => saveField({ correspondent: v })}
               />
             </div>
           )}
           {edited.documentType != null && (
             <div className="bg-gray-50/60">
-              <EditableField
+              <SelectableField
                 label={t('documents.fields.documentType')}
                 value={edited.documentType}
                 icon={<FolderOpen size={11} />}
+                options={allDocumentTypes.map((dt) => dt.name)}
                 onSave={(v) => saveField({ documentType: v })}
               />
             </div>
@@ -596,6 +600,115 @@ function SuggestionsPanel({ docId, suggestions }: { docId: number; suggestions: 
           </p>
           <p className="text-xs text-gray-700 leading-relaxed">{edited.summary}</p>
         </div>
+      )}
+    </div>
+  );
+}
+
+// ─── Selectable field (with dropdown of existing options) ────────────────────
+
+function SelectableField({
+  label,
+  value,
+  icon,
+  options,
+  onSave,
+}: {
+  label: string;
+  value: string | null;
+  icon?: React.ReactNode;
+  options: string[];
+  onSave: (v: string) => void;
+}) {
+  const [editing, setEditing] = useState(false);
+  const [draft, setDraft] = useState(value ?? '');
+  const [showList, setShowList] = useState(false);
+  const inputRef = useRef<HTMLInputElement>(null);
+  const listRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => { setDraft(value ?? ''); }, [value]);
+
+  useEffect(() => {
+    if (!showList) return;
+    function handleOutside(e: MouseEvent) {
+      if (
+        listRef.current && !listRef.current.contains(e.target as Node) &&
+        inputRef.current && !inputRef.current.contains(e.target as Node)
+      ) setShowList(false);
+    }
+    document.addEventListener('mousedown', handleOutside);
+    return () => document.removeEventListener('mousedown', handleOutside);
+  }, [showList]);
+
+  function commit(selected?: string) {
+    setEditing(false);
+    setShowList(false);
+    const trimmed = (selected ?? draft).trim();
+    setDraft(trimmed);
+    if (trimmed !== (value ?? '')) onSave(trimmed);
+  }
+
+  const filtered = options.filter(
+    (o) => draft.trim() === '' || o.toLowerCase().includes(draft.toLowerCase()),
+  );
+
+  return (
+    <div className="px-3 py-2.5">
+      <p className="flex items-center gap-1.5 text-[11px] font-medium text-gray-400 mb-1">
+        {icon}
+        {label}
+      </p>
+      {editing ? (
+        <div className="relative">
+          <input
+            ref={inputRef}
+            autoFocus
+            value={draft}
+            onChange={(e) => { setDraft(e.target.value); setShowList(true); }}
+            onFocus={() => setShowList(true)}
+            onBlur={() => setTimeout(() => { commit(); }, 150)}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter') { e.preventDefault(); commit(); }
+              if (e.key === 'Escape') { setEditing(false); setShowList(false); setDraft(value ?? ''); }
+              if (e.key === 'ArrowDown' && showList) {
+                e.preventDefault();
+                listRef.current?.querySelector<HTMLButtonElement>('button')?.focus();
+              }
+            }}
+            className="w-full rounded border border-primary-300 bg-white px-2 py-1 text-sm text-gray-800 focus:outline-none focus:ring-1 focus:ring-primary-400"
+          />
+          {showList && filtered.length > 0 && (
+            <div
+              ref={listRef}
+              className="absolute left-0 top-full mt-0.5 z-30 w-full max-h-44 overflow-y-auto rounded-lg border border-gray-200 bg-white shadow-lg py-1"
+            >
+              {filtered.map((opt) => (
+                <button
+                  key={opt}
+                  onMouseDown={(e) => { e.preventDefault(); commit(opt); }}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') { e.preventDefault(); commit(opt); }
+                    if (e.key === 'Escape') { setShowList(false); inputRef.current?.focus(); }
+                  }}
+                  className={cn(
+                    'flex w-full items-center px-3 py-1.5 text-left text-xs text-gray-700 hover:bg-primary-50 hover:text-primary-700 transition-colors',
+                    opt === value && 'font-medium text-primary-700',
+                  )}
+                >
+                  {opt}
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
+      ) : (
+        <button
+          onClick={() => { setEditing(true); setShowList(true); }}
+          className="group flex w-full items-center justify-between rounded border border-transparent bg-white px-2 py-1 text-left text-sm text-gray-800 hover:border-gray-200 transition-colors"
+        >
+          <span className="truncate">{value || '—'}</span>
+          <ChevronDown size={11} className="ml-2 shrink-0 text-gray-200 group-hover:text-gray-400 transition-colors" />
+        </button>
       )}
     </div>
   );

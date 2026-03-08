@@ -72,7 +72,23 @@ export function usePaperlessTags() {
     return useQuery({
         queryKey: ['paperless', 'tags'],
         queryFn: () => paperlessApi.getTags(),
-        staleTime: 5 * 60 * 1000, // 5 min cache
+        staleTime: 5 * 60 * 1000,
+    });
+}
+
+export function usePaperlessCorrespondents() {
+    return useQuery({
+        queryKey: ['paperless', 'correspondents'],
+        queryFn: () => paperlessApi.getCorrespondents(),
+        staleTime: 5 * 60 * 1000,
+    });
+}
+
+export function usePaperlessDocumentTypes() {
+    return useQuery({
+        queryKey: ['paperless', 'document-types'],
+        queryFn: () => paperlessApi.getDocumentTypes(),
+        staleTime: 5 * 60 * 1000,
     });
 }
 

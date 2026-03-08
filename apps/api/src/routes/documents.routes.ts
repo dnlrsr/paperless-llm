@@ -208,6 +208,18 @@ export const documentRoutes: FastifyPluginAsync<DocumentsDeps> = async (fastify,
         return { tags };
     });
 
+    // GET /paperless/correspondents — proxy: list all correspondents
+    fastify.get('/paperless/correspondents', async () => {
+        const correspondents = await paperlessClient.getCorrespondents();
+        return { correspondents };
+    });
+
+    // GET /paperless/document-types — proxy: list all document types
+    fastify.get('/paperless/document-types', async () => {
+        const documentTypes = await paperlessClient.getDocumentTypes();
+        return { documentTypes };
+    });
+
     // DELETE /documents/:id/suggestions — discard pending suggestions
     fastify.delete<{ Params: { id: string } }>(
         '/documents/:id/suggestions',

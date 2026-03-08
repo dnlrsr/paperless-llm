@@ -5,12 +5,14 @@
 
 import type {
     DocumentSuggestions,
+    PaperlessCorrespondent,
     PaperlessDocument,
+    PaperlessDocumentType,
     PaperlessTag,
 } from '@paperless-llm/shared';
 import { useAuthStore } from '../store';
 
-export type { DocumentSuggestions, PaperlessTag };
+export type { DocumentSuggestions, PaperlessCorrespondent, PaperlessDocumentType, PaperlessTag };
 
 // ─── Base ────────────────────────────────────────────────────────────────────
 
@@ -184,6 +186,10 @@ export const analysisApi = {
 export const paperlessApi = {
     getTags: () =>
         request<{ tags: PaperlessTag[] }>('/paperless/tags').then((r) => r.tags),
+    getCorrespondents: () =>
+        request<{ correspondents: PaperlessCorrespondent[] }>('/paperless/correspondents').then((r) => r.correspondents),
+    getDocumentTypes: () =>
+        request<{ documentTypes: PaperlessDocumentType[] }>('/paperless/document-types').then((r) => r.documentTypes),
 };
 
 // ─── Auth ────────────────────────────────────────────────────────────────────────────
