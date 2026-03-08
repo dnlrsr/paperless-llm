@@ -1,0 +1,12 @@
+node_modules/
+dist/
+.turbo/
+*.sqlite
+*.sqlite-wal
+*.sqlite-shm
+data/
+prompts/
+.env
+.env.local
+*.tsbuildinfo
+coverage/
