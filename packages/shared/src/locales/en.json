@@ -81,6 +81,7 @@
         "jobCompleted": "Done",
         "jobFailed": "Failed",
         "originalText": "Original text",
+        "addTag": "Add tag…",
         "fields": {
             "title": "Title",
             "tags": "Tags",

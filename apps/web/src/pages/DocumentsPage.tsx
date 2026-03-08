@@ -1,12 +1,12 @@
-import type { PaperlessDocument } from '@paperless-llm/shared';
+import type { DocumentSuggestions, PaperlessDocument } from '@paperless-llm/shared';
 import { useQueryClient } from '@tanstack/react-query';
-import { Check, ChevronDown, ChevronRight, FileText, Loader2, RefreshCw, Trash2, Zap } from 'lucide-react';
-import { useEffect, useState } from 'react';
+import { AlignLeft, Calendar, Check, ChevronDown, ChevronRight, FileText, FolderOpen, Loader2, Pencil, Plus, RefreshCw, Tag, Trash2, Type, User, X, Zap } from 'lucide-react';
+import { useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Badge, Button, Card, EmptyState, Spinner } from '../components/ui';
-import { DOCUMENTS_KEY, useApplySuggestions, useDeleteSuggestions, useDocumentSuggestions, useGenerateDocument, usePendingDocuments } from '../hooks/useDocuments';
+import { Button, Card, EmptyState, Spinner } from '../components/ui';
+import { DOCUMENTS_KEY, useApplySuggestions, useDeleteSuggestions, useDocumentSuggestions, useGenerateDocument, usePaperlessTags, usePatchSuggestions, usePendingDocuments } from '../hooks/useDocuments';
 import { useActiveJob } from '../hooks/useJobs';
-import { cn, formatDate, truncate } from '../lib/utils';
+import { cn, formatDate } from '../lib/utils';
 import { useUISettings } from '../store';
 
 // ─── Stage definitions ────────────────────────────────────────────────────────
@@ -260,28 +260,7 @@ function DocumentRow({ doc, expanded, onToggle }: {
 
           {/* Suggestions */}
           {!jobRunning && suggestions && (
-            <dl className="grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-2 text-sm">
-              {suggestions.title && <SuggestionField label={t('pipeline.title')} value={suggestions.title} />}
-              {suggestions.createdDate && <SuggestionField label={t('pipeline.createdDate')} value={suggestions.createdDate} />}
-              {suggestions.correspondent && <SuggestionField label={t('pipeline.correspondent')} value={suggestions.correspondent} />}
-              {suggestions.documentType && <SuggestionField label={t('pipeline.documentType')} value={suggestions.documentType} />}
-              {suggestions.tags && suggestions.tags.length > 0 && (
-                <div className="sm:col-span-2">
-                  <dt className="label">{t('pipeline.tags')}</dt>
-                  <dd className="flex flex-wrap gap-1 mt-1">
-                    {suggestions.tags.map((tag) => (
-                      <Badge key={tag} color="blue">{tag}</Badge>
-                    ))}
-                  </dd>
-                </div>
-              )}
-              {suggestions.summary && (
-                <div className="sm:col-span-2">
-                  <dt className="label">{t('pipeline.summary')}</dt>
-                  <dd className="text-gray-700 text-xs">{truncate(suggestions.summary, 300)}</dd>
-                </div>
-              )}
-            </dl>
+            <SuggestionsPanel docId={doc.id} suggestions={suggestions} />
           )}
 
           {/* Original document text */}
@@ -404,13 +383,277 @@ function StageProgress({
   );
 }
 
-// ─── Suggestion field ─────────────────────────────────────────────────────────
+// ─── Suggestions panel ───────────────────────────────────────────────────────
 
-function SuggestionField({ label, value }: { label: string; value: string }) {
+function SuggestionsPanel({ docId, suggestions }: { docId: number; suggestions: DocumentSuggestions }) {
+  const { t } = useTranslation();
+  const [edited, setEdited] = useState<DocumentSuggestions>({ ...suggestions });
+  const [newTag, setNewTag] = useState('');
+  const [showDropdown, setShowDropdown] = useState(false);
+  const addTagInputRef = useRef<HTMLInputElement>(null);
+  const dropdownRef = useRef<HTMLDivElement>(null);
+  const patch = usePatchSuggestions();
+  const { data: allPaperlessTags = [] } = usePaperlessTags();
+
+  // Re-sync when suggestions are refreshed (e.g. after re-generate)
+  useEffect(() => {
+    setEdited({ ...suggestions });
+  }, [suggestions]);
+
+  // Close dropdown on outside click
+  useEffect(() => {
+    if (!showDropdown) return;
+    function handleOutside(e: MouseEvent) {
+      if (
+        dropdownRef.current &&
+        !dropdownRef.current.contains(e.target as Node) &&
+        addTagInputRef.current &&
+        !addTagInputRef.current.contains(e.target as Node)
+      ) {
+        setShowDropdown(false);
+      }
+    }
+    document.addEventListener('mousedown', handleOutside);
+    return () => document.removeEventListener('mousedown', handleOutside);
+  }, [showDropdown]);
+
+  function saveField(update: Partial<DocumentSuggestions>) {
+    setEdited((prev) => ({ ...prev, ...update }));
+    patch.mutate({ id: docId, data: update });
+  }
+
+  function removeTag(tag: string) {
+    const tags = (edited.tags ?? []).filter((t) => t !== tag);
+    saveField({ tags });
+  }
+
+  function addTag(tagName?: string) {
+    const tag = (tagName ?? newTag).trim();
+    if (!tag || (edited.tags ?? []).includes(tag)) return;
+    saveField({ tags: [...(edited.tags ?? []), tag] });
+    setNewTag('');
+    setShowDropdown(false);
+    addTagInputRef.current?.focus();
+  }
+
+  // Filtered paperless tags: match search term and not already selected
+  const filteredTags = allPaperlessTags.filter(
+    (t) =>
+      !(edited.tags ?? []).includes(t.name) &&
+      (newTag.trim() === '' || t.name.toLowerCase().includes(newTag.toLowerCase())),
+  );
+
+  const hasFields =
+    edited.title != null ||
+    edited.correspondent != null ||
+    edited.documentType != null ||
+    edited.createdDate != null;
+
   return (
-    <div>
-      <dt className="label">{label}</dt>
-      <dd className="text-gray-800">{value}</dd>
+    <div className="rounded-lg border border-gray-100 bg-gray-50/60 divide-y divide-gray-100 overflow-hidden">
+      {/* Header */}
+      <div className="flex items-center gap-2 px-3 py-2">
+        <span className="text-[11px] font-semibold uppercase tracking-wider text-gray-400">
+          {t('documents.suggestions')}
+        </span>
+        {patch.isPending && (
+          <Loader2 size={11} className="animate-spin text-gray-300" />
+        )}
+      </div>
+
+      {/* Grid fields */}
+      {hasFields && (
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-px bg-gray-100">
+          {edited.title != null && (
+            <div className="bg-gray-50/60 sm:col-span-2">
+              <EditableField
+                label={t('documents.fields.title')}
+                value={edited.title}
+                icon={<Type size={11} />}
+                onSave={(v) => saveField({ title: v })}
+              />
+            </div>
+          )}
+          {edited.correspondent != null && (
+            <div className="bg-gray-50/60">
+              <EditableField
+                label={t('documents.fields.correspondent')}
+                value={edited.correspondent}
+                icon={<User size={11} />}
+                onSave={(v) => saveField({ correspondent: v })}
+              />
+            </div>
+          )}
+          {edited.documentType != null && (
+            <div className="bg-gray-50/60">
+              <EditableField
+                label={t('documents.fields.documentType')}
+                value={edited.documentType}
+                icon={<FolderOpen size={11} />}
+                onSave={(v) => saveField({ documentType: v })}
+              />
+            </div>
+          )}
+          {edited.createdDate != null && (
+            <div className="bg-gray-50/60">
+              <EditableField
+                label={t('documents.fields.createdDate')}
+                value={edited.createdDate}
+                icon={<Calendar size={11} />}
+                onSave={(v) => saveField({ createdDate: v })}
+              />
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Tags */}
+      <div className="px-3 py-2.5 bg-white">
+        <p className="flex items-center gap-1.5 text-[11px] font-medium text-gray-400 mb-2">
+          <Tag size={11} />
+          {t('documents.fields.tags')}
+        </p>
+        <div className="flex flex-wrap gap-1.5 items-center">
+          {(edited.tags ?? []).map((tag) => (
+            <span
+              key={tag}
+              className="inline-flex items-center gap-0.5 rounded-full bg-blue-50 border border-blue-200 text-blue-700 text-xs font-medium pl-2.5 pr-1 py-0.5"
+            >
+              {tag}
+              <button
+                onClick={() => removeTag(tag)}
+                className="ml-0.5 flex h-3.5 w-3.5 items-center justify-center rounded-full text-blue-400 hover:bg-blue-200 hover:text-blue-700 transition-colors"
+                aria-label={`Remove tag ${tag}`}
+              >
+                <X size={8} strokeWidth={3} />
+              </button>
+            </span>
+          ))}
+          {/* Add-tag input with dropdown picker */}
+          <div className="relative">
+            <div className="flex items-center gap-1">
+              <input
+                ref={addTagInputRef}
+                type="text"
+                value={newTag}
+                onChange={(e) => { setNewTag(e.target.value); setShowDropdown(true); }}
+                onFocus={() => setShowDropdown(true)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') { e.preventDefault(); addTag(); }
+                  if (e.key === 'Escape') { setShowDropdown(false); setNewTag(''); }
+                  if (e.key === 'ArrowDown' && showDropdown) {
+                    e.preventDefault();
+                    dropdownRef.current?.querySelector<HTMLButtonElement>('button')?.focus();
+                  }
+                }}
+                placeholder={t('documents.addTag')}
+                className="h-6 w-24 rounded-full border border-dashed border-gray-300 bg-transparent px-2.5 text-xs text-gray-500 placeholder-gray-300 transition-all focus:w-36 focus:border-blue-400 focus:outline-none focus:text-gray-700"
+              />
+              {newTag.trim() && (
+                <button
+                  onClick={() => addTag()}
+                  className="flex h-5 w-5 items-center justify-center rounded-full bg-blue-100 text-blue-600 hover:bg-blue-200 transition-colors"
+                >
+                  <Plus size={10} strokeWidth={2.5} />
+                </button>
+              )}
+            </div>
+            {/* Dropdown list of existing paperless tags */}
+            {showDropdown && filteredTags.length > 0 && (
+              <div
+                ref={dropdownRef}
+                className="absolute left-0 top-7 z-30 w-48 max-h-48 overflow-y-auto rounded-lg border border-gray-200 bg-white shadow-lg py-1"
+              >
+                {filteredTags.map((tag) => (
+                  <button
+                    key={tag.id}
+                    onMouseDown={(e) => { e.preventDefault(); addTag(tag.name); }}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter') { e.preventDefault(); addTag(tag.name); }
+                      if (e.key === 'Escape') { setShowDropdown(false); addTagInputRef.current?.focus(); }
+                    }}
+                    className="flex w-full items-center gap-2 px-3 py-1.5 text-left text-xs text-gray-700 hover:bg-blue-50 hover:text-blue-700 transition-colors"
+                  >
+                    <span
+                      className="inline-block h-2 w-2 rounded-full flex-shrink-0"
+                      style={{ backgroundColor: tag.color ?? '#6366f1' }}
+                    />
+                    {tag.name}
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+
+      {/* Summary */}
+      {edited.summary && (
+        <div className="px-3 py-2.5 bg-white">
+          <p className="flex items-center gap-1.5 text-[11px] font-medium text-gray-400 mb-1.5">
+            <AlignLeft size={11} />
+            {t('documents.fields.summary')}
+          </p>
+          <p className="text-xs text-gray-700 leading-relaxed">{edited.summary}</p>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ─── Editable field ───────────────────────────────────────────────────────────
+
+function EditableField({
+  label,
+  value,
+  icon,
+  onSave,
+}: {
+  label: string;
+  value: string | null;
+  icon?: React.ReactNode;
+  onSave: (v: string) => void;
+}) {
+  const [editing, setEditing] = useState(false);
+  const [draft, setDraft] = useState(value ?? '');
+
+  useEffect(() => {
+    setDraft(value ?? '');
+  }, [value]);
+
+  function commit() {
+    setEditing(false);
+    const trimmed = draft.trim();
+    if (trimmed !== (value ?? '')) onSave(trimmed);
+  }
+
+  return (
+    <div className="px-3 py-2.5">
+      <p className="flex items-center gap-1.5 text-[11px] font-medium text-gray-400 mb-1">
+        {icon}
+        {label}
+      </p>
+      {editing ? (
+        <input
+          autoFocus
+          value={draft}
+          onChange={(e) => setDraft(e.target.value)}
+          onBlur={commit}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter') commit();
+            if (e.key === 'Escape') { setEditing(false); setDraft(value ?? ''); }
+          }}
+          className="w-full rounded border border-primary-300 bg-white px-2 py-1 text-sm text-gray-800 focus:outline-none focus:ring-1 focus:ring-primary-400"
+        />
+      ) : (
+        <button
+          onClick={() => setEditing(true)}
+          className="group flex w-full items-center justify-between rounded border border-transparent bg-white px-2 py-1 text-left text-sm text-gray-800 hover:border-gray-200 transition-colors"
+        >
+          <span className="truncate">{value || '—'}</span>
+          <Pencil size={11} className="ml-2 shrink-0 text-gray-200 group-hover:text-gray-400 transition-colors" />
+        </button>
+      )}
     </div>
   );
 }

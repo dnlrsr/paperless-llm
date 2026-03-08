@@ -6,8 +6,11 @@
 import type {
     DocumentSuggestions,
     PaperlessDocument,
+    PaperlessTag,
 } from '@paperless-llm/shared';
 import { useAuthStore } from '../store';
+
+export type { DocumentSuggestions, PaperlessTag };
 
 // ─── Base ────────────────────────────────────────────────────────────────────
 
@@ -94,6 +97,12 @@ export const documentsApi = {
     applyAll: (id: number) =>
         request<{ success: boolean }>(`/documents/${id}/apply`, { method: 'POST' }),
 
+    patchSuggestions: (id: number, data: Partial<DocumentSuggestions>) =>
+        request<{ success: boolean }>(`/documents/${id}/suggestions`, {
+            method: 'PATCH',
+            body: JSON.stringify(data),
+        }),
+
     deleteSuggestions: (id: number) =>
         request<void>(`/documents/${id}/suggestions`, { method: 'DELETE' }),
 };
@@ -168,6 +177,13 @@ export const analysisApi = {
             method: 'POST',
             body: JSON.stringify(body),
         }),
+};
+
+// ─── Paperless proxy ────────────────────────────────────────────────────────────
+
+export const paperlessApi = {
+    getTags: () =>
+        request<{ tags: PaperlessTag[] }>('/paperless/tags').then((r) => r.tags),
 };
 
 // ─── Auth ────────────────────────────────────────────────────────────────────────────

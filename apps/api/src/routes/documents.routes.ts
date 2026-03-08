@@ -169,6 +169,45 @@ export const documentRoutes: FastifyPluginAsync<DocumentsDeps> = async (fastify,
         },
     );
 
+    // PATCH /documents/:id/suggestions — update pending suggestions (e.g. edit tags before applying)
+    fastify.patch<{ Params: { id: string }; Body: Partial<DocumentSuggestions> }>(
+        '/documents/:id/suggestions',
+        async (req, reply) => {
+            const documentId = parseInt(req.params['id'], 10);
+            if (isNaN(documentId)) return reply.badRequest('Invalid document id');
+
+            const body = req.body as Partial<DocumentSuggestions>;
+            const updates: Record<string, unknown> = {};
+            if (body.title !== undefined) updates['title'] = body.title;
+            if (body.tags !== undefined) updates['tags'] = body.tags;
+            if (body.correspondent !== undefined) updates['correspondent'] = body.correspondent;
+            if (body.documentType !== undefined) updates['documentType'] = body.documentType;
+            if (body.createdDate !== undefined) updates['createdDate'] = body.createdDate;
+            if (body.summary !== undefined) updates['summary'] = body.summary;
+
+            if (Object.keys(updates).length === 0) return reply.badRequest('No fields to update');
+
+            const result = db.update(schema.suggestions)
+                .set(updates)
+                .where(
+                    and(
+                        eq(schema.suggestions.documentId, documentId),
+                        eq(schema.suggestions.status, 'pending'),
+                    ),
+                )
+                .run();
+
+            if (result.changes === 0) return reply.notFound('No pending suggestions for this document');
+            return { success: true };
+        },
+    );
+
+    // GET /paperless/tags — proxy: list all tags from paperless-ngx (used by the tag picker UI)
+    fastify.get('/paperless/tags', async () => {
+        const tags = await paperlessClient.getTags();
+        return { tags };
+    });
+
     // DELETE /documents/:id/suggestions — discard pending suggestions
     fastify.delete<{ Params: { id: string } }>(
         '/documents/:id/suggestions',
