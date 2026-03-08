@@ -16,8 +16,9 @@ async function request<T>(
     path: string,
     init?: RequestInit,
 ): Promise<T> {
+    const hasBody = init?.body !== undefined && init.body !== null;
     const res = await fetch(`${BASE}${path}`, {
-        headers: { 'Content-Type': 'application/json', ...init?.headers },
+        headers: { ...(hasBody ? { 'Content-Type': 'application/json' } : {}), ...init?.headers },
         ...init,
     });
 
@@ -46,6 +47,7 @@ export interface HealthStatus {
     status: 'ok' | 'degraded';
     version: string;
     checks: Record<string, boolean | null>;
+    ollamaModel?: string;
 }
 
 export const healthApi = {
@@ -90,6 +92,8 @@ export interface JobRecord {
     documentId: number;
     status: 'waiting' | 'active' | 'completed' | 'failed' | 'delayed';
     progress: number;
+    currentStage?: string | null;
+    data?: { stages?: string[]; documentId?: number };
     error?: string;
     createdAt: string;
     updatedAt: string;

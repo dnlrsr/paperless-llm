@@ -1,8 +1,8 @@
 /**
  * Document routes — manual review flow.
  */
-import type { AppConfig } from '@paperless-llm/shared';
-import { ApplySuggestionsRequestSchema, GenerateRequestSchema } from '@paperless-llm/shared';
+import type { AppConfig, DocumentSuggestions } from '@paperless-llm/shared';
+import { GenerateRequestSchema } from '@paperless-llm/shared';
 import { and, eq } from 'drizzle-orm';
 import type { FastifyPluginAsync } from 'fastify';
 import type { Database } from '../db/connection.js';
@@ -111,17 +111,39 @@ export const documentRoutes: FastifyPluginAsync<DocumentsDeps> = async (fastify,
     );
 
     // POST /documents/:id/apply — write suggestions to paperless-ngx
-    fastify.post<{ Params: { id: string }; Body: unknown }>(
+    fastify.post<{ Params: { id: string } }>(
         '/documents/:id/apply',
         async (req, reply) => {
             const documentId = parseInt(req.params['id'], 10);
             if (isNaN(documentId)) return reply.badRequest('Invalid document id');
 
-            const parsed = ApplySuggestionsRequestSchema.safeParse(req.body);
-            if (!parsed.success) return reply.badRequest(parsed.error.message);
+            // Look up pending suggestions from DB
+            const row = db
+                .select()
+                .from(schema.suggestions)
+                .where(
+                    and(
+                        eq(schema.suggestions.documentId, documentId),
+                        eq(schema.suggestions.status, 'pending'),
+                    ),
+                )
+                .orderBy(schema.suggestions.createdAt)
+                .all()
+                .at(-1);
+
+            if (!row) return reply.notFound('No pending suggestions for this document');
+
+            const suggestions = {
+                title: row.title ?? undefined,
+                tags: row.tags ?? undefined,
+                correspondent: row.correspondent ?? undefined,
+                documentType: row.documentType ?? undefined,
+                createdDate: row.createdDate ?? undefined,
+                customFields: row.customFields ?? undefined,
+            } as Partial<DocumentSuggestions>;
 
             const document = await paperlessClient.getDocument(documentId);
-            await paperlessClient.applySuggestions(document, parsed.data.suggestions);
+            await paperlessClient.applySuggestions(document, suggestions);
 
             // Mark as applied in DB
             db.update(schema.suggestions)

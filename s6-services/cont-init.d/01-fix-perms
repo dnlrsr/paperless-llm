@@ -1,0 +1,3 @@
+#!/command/with-contenv sh
+# Fix ownership of writable dirs after volume mounts
+chown -R appuser:appgroup /app/data /app/prompts

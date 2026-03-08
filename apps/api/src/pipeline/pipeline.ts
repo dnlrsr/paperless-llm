@@ -46,9 +46,21 @@ export class Pipeline {
         deps: StageDependencies,
         mode: PipelineMode,
         requestedStages?: string[],
+        onProgress?: (pct: number, stage: string) => Promise<void>,
     ): Promise<DocumentContext> {
         const log = getLogger();
         let current = ctx;
+
+        // Determine which stages will actually run so we can space progress evenly
+        const activeStages = [...this.stages.entries()].filter(([name, stage]) =>
+            requestedStages && requestedStages.length > 0
+                ? requestedStages.includes(name)
+                : stage.isEnabled(deps.config, mode),
+        );
+
+        // Pipeline progress runs from 15 → 85 (70 points)
+        const pctPerStage = activeStages.length > 0 ? 70 / activeStages.length : 0;
+        let stageIndex = 0;
 
         for (const [name, stage] of this.stages) {
             const shouldRun = requestedStages && requestedStages.length > 0
@@ -56,6 +68,9 @@ export class Pipeline {
                 : stage.isEnabled(deps.config, mode);
 
             if (!shouldRun) continue;
+
+            const pct = Math.round(15 + stageIndex * pctPerStage);
+            if (onProgress) await onProgress(pct, name);
 
             log.debug({ documentId: ctx.documentId, stage: name }, 'Pipeline: running stage');
             try {
@@ -65,6 +80,7 @@ export class Pipeline {
                 log.error({ documentId: ctx.documentId, stage: name, err }, 'Pipeline: stage failed');
                 throw err;
             }
+            stageIndex++;
         }
 
         return current;

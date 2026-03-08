@@ -72,6 +72,10 @@
         "discardSuggestions": "Verwerfen",
         "applied": "Vorschläge erfolgreich übernommen",
         "discarded": "Vorschläge verworfen",
+        "jobWaiting": "Warte in der Warteschlange…",
+        "jobProcessing": "Verarbeitung…",
+        "jobCompleted": "Fertig",
+        "jobFailed": "Fehlgeschlagen",
         "fields": {
             "title": "Titel",
             "tags": "Tags",

@@ -41,8 +41,10 @@ export function createMetadataWorker(
                 suggestions: {},
             };
 
-            const result = await pipeline.run(ctx, deps, mode, stages);
-            await job.updateProgress(85);
+            const result = await pipeline.run(ctx, deps, mode, stages, async (pct, stage) => {
+                await job.updateProgress({ pct, stage });
+            });
+            await job.updateProgress({ pct: 85, stage: null });
 
             await db
                 .insert(schema.suggestions)

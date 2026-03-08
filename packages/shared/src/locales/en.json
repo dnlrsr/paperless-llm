@@ -72,6 +72,10 @@
         "discardSuggestions": "Discard",
         "applied": "Suggestions applied successfully",
         "discarded": "Suggestions discarded",
+        "jobWaiting": "Waiting in queue…",
+        "jobProcessing": "Processing…",
+        "jobCompleted": "Done",
+        "jobFailed": "Failed",
         "fields": {
             "title": "Title",
             "tags": "Tags",

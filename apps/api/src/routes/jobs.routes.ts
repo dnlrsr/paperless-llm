@@ -15,6 +15,14 @@ export const jobRoutes: FastifyPluginAsync<JobsDeps> = async (fastify, opts) => 
 
     const allQueues = Object.entries(queues) as [string, Queues[keyof Queues]][];
 
+    function parseProgress(raw: unknown): { pct: number; currentStage: string | null } {
+        if (typeof raw === 'object' && raw !== null) {
+            const p = raw as { pct?: number; stage?: string | null };
+            return { pct: p.pct ?? 0, currentStage: p.stage ?? null };
+        }
+        return { pct: typeof raw === 'number' ? raw : 0, currentStage: null };
+    }
+
     // GET /jobs — list recent jobs across all queues
     fastify.get('/jobs', async () => {
         const jobs = (
@@ -26,15 +34,19 @@ export const jobRoutes: FastifyPluginAsync<JobsDeps> = async (fastify, opts) => 
                         queue.getCompleted(0, 20),
                         queue.getFailed(0, 20),
                     ]);
-                    return [...active, ...waiting, ...completed, ...failed].map((j) => ({
-                        id: j.id,
-                        type,
-                        data: j.data,
-                        progress: typeof j.progress === 'number' ? j.progress : 0,
-                        status: j.finishedOn ? (j.failedReason ? 'failed' : 'completed') : 'active',
-                        failedReason: j.failedReason,
-                        createdAt: new Date(j.timestamp).toISOString(),
-                    }));
+                    return [...active, ...waiting, ...completed, ...failed].map((j) => {
+                        const { pct, currentStage } = parseProgress(j.progress);
+                        return {
+                            id: j.id,
+                            type,
+                            data: j.data,
+                            progress: pct,
+                            currentStage,
+                            status: j.finishedOn ? (j.failedReason ? 'failed' : 'completed') : 'active',
+                            failedReason: j.failedReason,
+                            createdAt: new Date(j.timestamp).toISOString(),
+                        };
+                    });
                 }),
             )
         ).flat();
@@ -56,11 +68,13 @@ export const jobRoutes: FastifyPluginAsync<JobsDeps> = async (fastify, opts) => 
             for (const [type, queue] of searchQueues) {
                 const job = await queue.getJob(id);
                 if (job) {
+                    const { pct, currentStage } = parseProgress(job.progress);
                     return {
                         id: job.id,
                         type,
                         data: job.data,
-                        progress: typeof job.progress === 'number' ? job.progress : 0,
+                        progress: pct,
+                        currentStage,
                         status: job.finishedOn ? (job.failedReason ? 'failed' : 'completed') : 'active',
                         failedReason: job.failedReason,
                         logs: await job.log ? (await queue.getJobLogs(id)).logs : [],

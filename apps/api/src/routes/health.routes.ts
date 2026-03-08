@@ -38,6 +38,7 @@ export const healthRoutes: FastifyPluginAsync<HealthDeps> = async (fastify, opts
             status: allOk ? 'ok' : 'degraded',
             version: opts.version,
             checks: { paperlessNgx, redis: redisOk, database: dbOk, ollama: ollamaOk },
+            ...(ollamaUrl ? { ollamaModel: opts.config.LLM_MODEL } : {}),
         });
     });
 

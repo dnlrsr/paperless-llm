@@ -23,6 +23,20 @@ export function useJob(id: string | null) {
     });
 }
 
+/** Polls a job at 1.5 s while it is active/waiting, stops when done. */
+export function useActiveJob(id: string | null) {
+    return useQuery({
+        queryKey: [JOBS_KEY, 'active', id],
+        queryFn: () => jobsApi.get(id!),
+        enabled: id !== null,
+        refetchInterval: (query) => {
+            const status = query.state.data?.status;
+            if (!status || status === 'active' || status === 'waiting') return 1500;
+            return false;
+        },
+    });
+}
+
 export function useCancelJob() {
     const qc = useQueryClient();
     const { push } = useNotifications();

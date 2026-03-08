@@ -100,12 +100,12 @@ function SidebarStatus() {
     (j) => j.status === 'active' || j.status === 'waiting',
   ) ?? [];
 
-  const checks: Array<{ key: string; label: string; ok: boolean | null }> = [
+  const checks: Array<{ key: string; label: string; sublabel?: string; ok: boolean | null }> = [
     { key: 'paperlessNgx', label: 'paperless-ngx',      ok: health?.checks.paperlessNgx ?? null },
     { key: 'redis',        label: 'Redis',               ok: health?.checks.redis        ?? null },
     { key: 'database',     label: t('dashboard.database'), ok: health?.checks.database   ?? null },
     ...(health?.checks.ollama !== undefined
-      ? [{ key: 'ollama', label: 'Ollama', ok: health.checks.ollama }]
+      ? [{ key: 'ollama', label: 'Ollama', sublabel: health?.ollamaModel, ok: health.checks.ollama }]
       : []),
   ];
 
@@ -117,7 +117,7 @@ function SidebarStatus() {
 
       {/* Service indicators */}
       <ul className="space-y-1">
-        {checks.map(({ key, label, ok }) => (
+        {checks.map(({ key, label, sublabel, ok }) => (
           <li key={key} className="flex items-center gap-2">
             <span
               className={cn(
@@ -126,7 +126,10 @@ function SidebarStatus() {
                 ok === true  ? 'bg-green-400' : 'bg-red-400',
               )}
             />
-            <span className="text-xs text-gray-400 truncate">{label}</span>
+            <div className="min-w-0">
+              <span className="text-xs text-gray-400 truncate block">{label}</span>
+              {sublabel && <span className="text-[10px] text-gray-600 truncate block">{sublabel}</span>}
+            </div>
           </li>
         ))}
       </ul>
