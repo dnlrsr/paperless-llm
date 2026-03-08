@@ -200,8 +200,8 @@ function DocumentRow({ doc, expanded, onToggle }: {
           <div className="flex items-center gap-2 flex-wrap">
             <Button
               variant="primary"
-              loading={generating}
-              disabled={selectedStages.length === 0 || jobRunning}
+              loading={generating || suggestionsLoading}
+              disabled={selectedStages.length === 0 || jobRunning || suggestionsLoading}
               onClick={() => generate.mutate({ id: doc.id, stages: selectedStages })}
             >
               <RefreshCw size={14} /> {t('documents.generate')}
@@ -227,9 +227,6 @@ function DocumentRow({ doc, expanded, onToggle }: {
               status={activeJob.status}
             />
           )}
-
-          {/* Suggestions loading skeleton — only when no active job */}
-          {!jobRunning && suggestionsLoading && <Spinner size="sm" />}
 
           {/* Suggestions */}
           {!jobRunning && suggestions && (
