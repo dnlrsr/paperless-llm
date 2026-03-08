@@ -89,6 +89,10 @@ export const AppConfigSchema = z.object({
         .transform((val) => val.split(',').map((s) => s.trim()).filter(Boolean))
         .default(''),
 
+    // Auth
+    AUTH_ENABLED: z.coerce.boolean().default(true),
+    JWT_SECRET: z.string().min(32, 'JWT_SECRET must be at least 32 characters').optional(),
+
     // Server
     PORT: z.coerce.number().int().positive().default(8080),
     LOG_LEVEL: z.enum(['trace', 'debug', 'info', 'warn', 'error']).default('info'),

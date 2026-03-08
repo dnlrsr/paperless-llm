@@ -4,15 +4,16 @@ import {
   FileText,
   FlaskConical,
   LayoutDashboard,
+  LogOut,
   MessageSquare,
   Settings,
 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
-import { NavLink } from 'react-router-dom';
+import { NavLink, useNavigate } from 'react-router-dom';
 import i18n from '../i18n';
 import { healthApi, jobsApi } from '../lib/api';
 import { cn } from '../lib/utils';
-import { useUISettings } from '../store';
+import { useAuthStore, useUISettings } from '../store';
 
 const navItems = [
   { to: '/',         labelKey: 'nav.dashboard',  Icon: LayoutDashboard },
@@ -26,11 +27,18 @@ const navItems = [
 export function Sidebar() {
   const { t } = useTranslation();
   const { language, setLanguage } = useUISettings();
+  const { user, clearAuth } = useAuthStore();
+  const navigate = useNavigate();
 
   function toggleLang() {
     const next = language === 'en' ? 'de' : 'en';
     setLanguage(next);
     void i18n.changeLanguage(next);
+  }
+
+  function handleLogout() {
+    clearAuth();
+    navigate('/login', { replace: true });
   }
 
   return (
@@ -63,8 +71,20 @@ export function Sidebar() {
         ))}
       </nav>
 
-      {/* Lang toggle */}
-      <div className="px-4 py-3 border-t border-gray-700">
+      {/* Lang toggle + logout */}
+      <div className="px-4 py-3 border-t border-gray-700 space-y-2">
+        {user && (
+          <div className="flex items-center justify-between">
+            <span className="text-xs text-gray-400 truncate">{user.username}</span>
+            <button
+              onClick={handleLogout}
+              title="Sign out"
+              className="text-gray-500 hover:text-red-400 transition-colors"
+            >
+              <LogOut size={14} />
+            </button>
+          </div>
+        )}
         <button
           onClick={toggleLang}
           className="text-xs text-gray-500 hover:text-gray-300 transition-colors"

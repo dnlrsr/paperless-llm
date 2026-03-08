@@ -7,6 +7,7 @@ import type {
     DocumentSuggestions,
     PaperlessDocument,
 } from '@paperless-llm/shared';
+import { useAuthStore } from '../store';
 
 // ─── Base ────────────────────────────────────────────────────────────────────
 
@@ -16,11 +17,22 @@ async function request<T>(
     path: string,
     init?: RequestInit,
 ): Promise<T> {
+    const token = useAuthStore.getState().token;
     const hasBody = init?.body !== undefined && init.body !== null;
     const res = await fetch(`${BASE}${path}`, {
-        headers: { ...(hasBody ? { 'Content-Type': 'application/json' } : {}), ...init?.headers },
+        headers: {
+            ...(hasBody ? { 'Content-Type': 'application/json' } : {}),
+            ...(token ? { Authorization: `Bearer ${token}` } : {}),
+            ...init?.headers,
+        },
         ...init,
     });
+
+    if (res.status === 401) {
+        useAuthStore.getState().clearAuth();
+        window.location.href = '/login';
+        throw new ApiError(401, 'Unauthorized');
+    }
 
     if (!res.ok) {
         const body = await res.text().catch(() => '');
@@ -156,3 +168,23 @@ export const analysisApi = {
             body: JSON.stringify(body),
         }),
 };
+
+// ─── Auth ────────────────────────────────────────────────────────────────────────────
+
+export interface LoginResponse {
+    token: string;
+    user: { id: number; username: string; email: string };
+}
+
+export const authApi = {
+    login: (username: string, password: string) =>
+        fetch(`${BASE}/auth/login`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ username, password }),
+        }).then(async (res) => {
+            if (!res.ok) throw new ApiError(res.status, await res.text().catch(() => res.statusText));
+            return res.json() as Promise<LoginResponse>;
+        }),
+};
+
