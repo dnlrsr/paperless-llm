@@ -4,8 +4,6 @@
 
 **paperless-llm** connects to your [paperless-ngx](https://github.com/paperless-ngx/paperless-ngx) instance and uses a large language model of your choice to automatically suggest titles, tags, correspondents, document types, creation dates, and summaries for your documents. You review the suggestions in a clean web UI and apply them with a single click.
 
-Inspired by [paperless-gpt](https://github.com/icereed/paperless-gpt).
-
 ---
 
 ## What it does
