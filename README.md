@@ -74,7 +74,7 @@ Open **http://localhost:3000** — the web UI is ready.
 ### 3 — Process a document
 
 1. In paperless-ngx, add the tag **`paperless-llm`** to any document.
-2. paperless-llm picks it up automatically (checks every 60 seconds by default).
+2. paperless-llm picks it up automatically (checks every 30 seconds by default).
 3. Open the **Documents** page in the web UI to review and apply the suggestions.
 
 ---
@@ -88,8 +88,8 @@ Set `LLM_PROVIDER` and the matching API key in your `.env`:
 | OpenAI | `openai` | `OPENAI_API_KEY` |
 | Anthropic | `anthropic` | `ANTHROPIC_API_KEY` |
 | Mistral | `mistral` | `MISTRAL_API_KEY` |
-| Google Gemini | `google` | `GOOGLE_GENERATIVE_AI_API_KEY` |
-| Ollama (local) | `ollama` | `OLLAMA_HOST`, `OLLAMA_MODEL` |
+| Google Gemini | `googleai` | `GOOGLEAI_API_KEY` |
+| Ollama (local) | `ollama` | `OLLAMA_HOST` |
 
 ---
 
@@ -99,9 +99,9 @@ If your documents don't have a text layer (e.g. scanned PDFs), you can enable OC
 
 | `OCR_PROVIDER` value | Description |
 |---|---|
-| *(not set)* | Use the existing text layer only |
-| `llm` | Send page images to your vision-capable LLM |
-| `azure-document-intelligence` | Azure AI Document Intelligence |
+| `llm` | Send page images to your vision-capable LLM *(default)* |
+| `azure` | Azure AI Document Intelligence |
+| `google_docai` | Google Document AI |
 | `docling` | Self-hosted [Docling](https://github.com/DS4SD/docling) server |
 
 ---
