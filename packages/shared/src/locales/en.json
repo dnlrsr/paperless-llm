@@ -193,5 +193,17 @@
         "applyFailed": "Apply failed",
         "saveFailed": "Save failed",
         "resetFailed": "Reset failed"
+    },
+    "login": {
+        "title": "paperless-llm",
+        "subtitle": "Sign in with your Paperless-ngx credentials",
+        "username": "Username",
+        "usernamePlaceholder": "Enter your username",
+        "password": "Password",
+        "passwordPlaceholder": "Enter your password",
+        "submit": "Sign in",
+        "submitting": "Signing in…",
+        "invalidCredentials": "Invalid username or password.",
+        "failed": "Login failed. Please try again."
     }
 }

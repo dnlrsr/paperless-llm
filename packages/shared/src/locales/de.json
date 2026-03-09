@@ -193,5 +193,17 @@
         "applyFailed": "Übernehmen fehlgeschlagen",
         "saveFailed": "Speichern fehlgeschlagen",
         "resetFailed": "Zurücksetzen fehlgeschlagen"
+    },
+    "login": {
+        "title": "paperless-llm",
+        "subtitle": "Mit Ihren Paperless-ngx-Zugangsdaten anmelden",
+        "username": "Benutzername",
+        "usernamePlaceholder": "Benutzername eingeben",
+        "password": "Passwort",
+        "passwordPlaceholder": "Passwort eingeben",
+        "submit": "Anmelden",
+        "submitting": "Anmeldung läuft…",
+        "invalidCredentials": "Ungültiger Benutzername oder falsches Passwort.",
+        "failed": "Anmeldung fehlgeschlagen. Bitte erneut versuchen."
     }
 }
