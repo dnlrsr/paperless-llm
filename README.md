@@ -91,8 +91,8 @@ Set `LLM_PROVIDER` and the matching API key in your `.env`:
 | OpenAI | `openai` | `OPENAI_API_KEY` |
 | Anthropic | `anthropic` | `ANTHROPIC_API_KEY` |
 | Mistral | `mistral` | `MISTRAL_API_KEY` |
-| Google Gemini | `google` | `GOOGLE_GENERATIVE_AI_API_KEY` |
-| Ollama (local) | `ollama` | `OLLAMA_HOST`, `OLLAMA_MODEL` |
+| Google Gemini | `googleai` | `GOOGLEAI_API_KEY` |
+| Ollama (local) | `ollama` | `OLLAMA_HOST` |
 
 ---
 
@@ -102,9 +102,9 @@ If your documents don't have a text layer (e.g. scanned PDFs), you can enable OC
 
 | `OCR_PROVIDER` value | Description |
 |---|---|
-| *(not set)* | Use the existing text layer only |
-| `llm` | Send page images to your vision-capable LLM |
-| `azure-document-intelligence` | Azure AI Document Intelligence |
+| `llm` | Send page images to your vision-capable LLM *(default)* |
+| `azure` | Azure AI Document Intelligence |
+| `google_docai` | Google Document AI |
 | `docling` | Self-hosted [Docling](https://github.com/DS4SD/docling) server |
 
 ---
