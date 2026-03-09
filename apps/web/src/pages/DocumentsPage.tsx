@@ -445,12 +445,6 @@ function SuggestionsPanel({ docId, suggestions }: { docId: number; suggestions: 
       (newTag.trim() === '' || t.name.toLowerCase().includes(newTag.toLowerCase())),
   );
 
-  const hasFields =
-    edited.title != null ||
-    edited.correspondent != null ||
-    edited.documentType != null ||
-    edited.createdDate != null;
-
   return (
     <div className="rounded-lg border border-gray-100 bg-gray-50/60 divide-y divide-gray-100 overflow-hidden">
       {/* Header */}
@@ -463,53 +457,43 @@ function SuggestionsPanel({ docId, suggestions }: { docId: number; suggestions: 
         )}
       </div>
 
-      {/* Grid fields */}
-      {hasFields && (
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-px bg-gray-100">
-          {edited.title != null && (
-            <div className="bg-gray-50/60 sm:col-span-2">
-              <EditableField
-                label={t('documents.fields.title')}
-                value={edited.title}
-                icon={<Type size={11} />}
-                onSave={(v) => saveField({ title: v })}
-              />
-            </div>
-          )}
-          {edited.correspondent != null && (
-            <div className="bg-gray-50/60">
-              <SelectableField
-                label={t('documents.fields.correspondent')}
-                value={edited.correspondent}
-                icon={<User size={11} />}
-                options={allCorrespondents.map((c) => c.name)}
-                onSave={(v) => saveField({ correspondent: v })}
-              />
-            </div>
-          )}
-          {edited.documentType != null && (
-            <div className="bg-gray-50/60">
-              <SelectableField
-                label={t('documents.fields.documentType')}
-                value={edited.documentType}
-                icon={<FolderOpen size={11} />}
-                options={allDocumentTypes.map((dt) => dt.name)}
-                onSave={(v) => saveField({ documentType: v })}
-              />
-            </div>
-          )}
-          {edited.createdDate != null && (
-            <div className="bg-gray-50/60">
-              <EditableField
-                label={t('documents.fields.createdDate')}
-                value={edited.createdDate}
-                icon={<Calendar size={11} />}
-                onSave={(v) => saveField({ createdDate: v })}
-              />
-            </div>
-          )}
+      {/* Grid fields — always shown so null fields can be filled manually */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-px bg-gray-100">
+        <div className="bg-gray-50/60 sm:col-span-2">
+          <EditableField
+            label={t('documents.fields.title')}
+            value={edited.title ?? null}
+            icon={<Type size={11} />}
+            onSave={(v) => saveField({ title: v })}
+          />
         </div>
-      )}
+        <div className="bg-gray-50/60">
+          <SelectableField
+            label={t('documents.fields.correspondent')}
+            value={edited.correspondent ?? null}
+            icon={<User size={11} />}
+            options={allCorrespondents.map((c) => c.name)}
+            onSave={(v) => saveField({ correspondent: v })}
+          />
+        </div>
+        <div className="bg-gray-50/60">
+          <SelectableField
+            label={t('documents.fields.documentType')}
+            value={edited.documentType ?? null}
+            icon={<FolderOpen size={11} />}
+            options={allDocumentTypes.map((dt) => dt.name)}
+            onSave={(v) => saveField({ documentType: v })}
+          />
+        </div>
+        <div className="bg-gray-50/60">
+          <EditableField
+            label={t('documents.fields.createdDate')}
+            value={edited.createdDate ?? null}
+            icon={<Calendar size={11} />}
+            onSave={(v) => saveField({ createdDate: v })}
+          />
+        </div>
+      </div>
 
       {/* Tags */}
       <div className="px-3 py-2.5 bg-white">
