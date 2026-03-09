@@ -649,7 +649,12 @@ function SelectableField({
             value={draft}
             onChange={(e) => { setDraft(e.target.value); setShowList(true); }}
             onFocus={() => setShowList(true)}
-            onBlur={() => setTimeout(() => { commit(); }, 150)}
+            onBlur={(e) => {
+              const next = e.relatedTarget as (Node | null);
+              if (!next || !listRef.current?.contains(next)) {
+                commit();
+              }
+            }}
             onKeyDown={(e) => {
               if (e.key === 'Enter') { e.preventDefault(); commit(); }
               if (e.key === 'Escape') { setEditing(false); setShowList(false); setDraft(value ?? ''); }
