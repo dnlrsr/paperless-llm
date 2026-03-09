@@ -144,7 +144,7 @@ export const documentRoutes: FastifyPluginAsync<DocumentsDeps> = async (fastify,
             } as Partial<DocumentSuggestions>;
 
             const document = await paperlessClient.getDocument(documentId);
-            await paperlessClient.applySuggestions(document, suggestions);
+            const updatedDocument = await paperlessClient.applySuggestions(document, suggestions);
 
             // Mark as applied in DB
             db.update(schema.suggestions)
@@ -157,10 +157,11 @@ export const documentRoutes: FastifyPluginAsync<DocumentsDeps> = async (fastify,
                 )
                 .run();
 
-            // Remove MANUAL_TAG from document
+            // Remove MANUAL_TAG from document — use updatedDocument.tags so we don't
+            // overwrite the tags that were just applied by applySuggestions.
             const manualTag = await paperlessClient.getTagByName(config.MANUAL_TAG);
-            if (manualTag) {
-                const newTags = document.tags.filter((t) => t !== manualTag.id);
+            if (manualTag && updatedDocument.tags.includes(manualTag.id)) {
+                const newTags = updatedDocument.tags.filter((t) => t !== manualTag.id);
                 await paperlessClient.updateDocument(documentId, { tags: newTags });
             }
 
