@@ -2,7 +2,7 @@
  * Document routes — manual review flow.
  */
 import type { AppConfig, DocumentSuggestions } from '@paperless-llm/shared';
-import { GenerateRequestSchema } from '@paperless-llm/shared';
+import { DocumentSuggestionsSchema, GenerateRequestSchema } from '@paperless-llm/shared';
 import { and, eq } from 'drizzle-orm';
 import type { FastifyPluginAsync } from 'fastify';
 import type { Database } from '../db/connection.js';
@@ -170,13 +170,18 @@ export const documentRoutes: FastifyPluginAsync<DocumentsDeps> = async (fastify,
     );
 
     // PATCH /documents/:id/suggestions — update pending suggestions (e.g. edit tags before applying)
-    fastify.patch<{ Params: { id: string }; Body: Partial<DocumentSuggestions> }>(
+    fastify.patch<{ Params: { id: string }; Body: unknown }>(
         '/documents/:id/suggestions',
         async (req, reply) => {
             const documentId = parseInt(req.params['id'], 10);
             if (isNaN(documentId)) return reply.badRequest('Invalid document id');
 
-            const body = req.body as Partial<DocumentSuggestions>;
+            const parsed = DocumentSuggestionsSchema.safeParse(req.body);
+            if (!parsed.success) {
+                return reply.badRequest(parsed.error.issues.map((i) => i.message).join(', '));
+            }
+
+            const body = parsed.data;
             const updates: Record<string, unknown> = {};
             if (body.title !== undefined) updates['title'] = body.title;
             if (body.tags !== undefined) updates['tags'] = body.tags;
