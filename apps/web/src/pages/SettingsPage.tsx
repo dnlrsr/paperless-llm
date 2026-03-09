@@ -68,6 +68,7 @@ export function SettingsPage() {
             <button
               role="switch"
               aria-checked={useExistingOnly}
+              aria-label={t('settings.useExistingOnly')}
               onClick={() => setUseExistingOnly(!useExistingOnly)}
               className={`relative inline-flex h-6 w-11 shrink-0 rounded-full border-2 border-transparent transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 ${
                 useExistingOnly ? 'bg-primary-500' : 'bg-gray-200'
