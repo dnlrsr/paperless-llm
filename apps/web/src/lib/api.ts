@@ -135,6 +135,9 @@ export const jobsApi = {
     get: (id: string) => request<JobRecord>(`/jobs/${id}`),
 
     cancel: (id: string) => request<void>(`/jobs/${id}`, { method: 'DELETE' }),
+
+    getActiveForDocument: (documentId: number) =>
+        request<{ job: JobRecord | null }>(`/jobs/active-for-document/${documentId}`).then((r) => r.job),
 };
 
 // ─── Prompts ─────────────────────────────────────────────────────────────────

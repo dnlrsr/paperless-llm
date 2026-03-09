@@ -8,7 +8,7 @@
 
 ## What it does
 
-Tag a document with `paperless-llm` in paperless-ngx — that's it. paperless-llm picks it up, analyzes the content, and presents you with AI-generated metadata suggestions. You stay in control: nothing is written back until you approve it.
+Tag a document with `paperless-llm` in paperless-ngx — that's it. paperless-llm picks it up, **automatically generates AI metadata suggestions**, and presents them in the web UI. You stay in control: nothing is written back until you approve it.
 
 **Suggested metadata:**
 - 📄 Title
@@ -24,6 +24,7 @@ Tag a document with `paperless-llm` in paperless-ngx — that's it. paperless-ll
 
 - **Works with your preferred LLM** — OpenAI, Anthropic, Mistral, Google Gemini, or a self-hosted Ollama model
 - **Multiple OCR options** — use the existing text layer, LLM vision, Azure Document Intelligence, or a self-hosted Docling server
+- **Auto-suggestion on tag** — as soon as you tag a document with `paperless-llm`, suggestions are generated automatically; open the UI to review and apply them
 - **Review before applying** — all suggestions are shown in the web UI before anything is written back to paperless-ngx
 - **Customizable prompts** — edit the prompts used for each metadata field directly in the UI, no restart required
 - **Auto-processing mode** — optionally skip the review step and apply suggestions automatically
@@ -74,8 +75,10 @@ Open **http://localhost:3000** — the web UI is ready.
 ### 3 — Process a document
 
 1. In paperless-ngx, add the tag **`paperless-llm`** to any document.
-2. paperless-llm picks it up automatically (checks every 30 seconds by default).
-3. Open the **Documents** page in the web UI to review and apply the suggestions.
+2. paperless-llm picks it up automatically (checks every 30 seconds by default) and **immediately starts generating suggestions**.
+3. Open the **Documents** page in the web UI — expand the document to see live progress, then review and apply the suggestions.
+
+> **Tip:** Set `MANUAL_AUTO_GENERATE=false` to disable automatic generation and trigger it manually from the UI instead.
 
 ---
 
@@ -130,8 +133,9 @@ All settings are controlled via environment variables in `.env`. Key options:
 |---|---|---|
 | `PAPERLESS_BASE_URL` | — | URL of your paperless-ngx instance |
 | `PAPERLESS_API_TOKEN` | — | paperless-ngx API token |
-| `MANUAL_TAG` | `paperless-llm` | Tag to trigger manual review processing |
-| `AUTO_TAG` | `paperless-llm-auto` | Tag to trigger fully automatic processing |
+| `MANUAL_TAG` | `paperless-llm` | Tag to trigger suggestions + manual review |
+| `MANUAL_AUTO_GENERATE` | `true` | Auto-generate suggestions as soon as `MANUAL_TAG` is detected (set to `false` to trigger manually from the UI) |
+| `AUTO_TAG` | `paperless-llm-auto` | Tag to trigger fully automatic processing (no review step) |
 | `PROCESSED_TAG` | `paperless-llm-processed` | Tag added after suggestions are applied |
 | `LLM_PROVIDER` | — | LLM provider to use |
 | `LLM_MODEL` | — | Model name |

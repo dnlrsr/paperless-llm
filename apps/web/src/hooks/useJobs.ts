@@ -37,6 +37,22 @@ export function useActiveJob(id: string | null) {
     });
 }
 
+/**
+ * Polls for an active/waiting metadata job for a given documentId.
+ * Useful to detect poller-initiated auto-generation in the UI.
+ */
+export function useActiveJobForDocument(documentId: number | null) {
+    return useQuery({
+        queryKey: [JOBS_KEY, 'active-for-document', documentId],
+        queryFn: () => jobsApi.getActiveForDocument(documentId!),
+        enabled: documentId !== null,
+        refetchInterval: (query) => {
+            // Keep polling while there is an active job; stop when null (done)
+            return query.state.data !== undefined ? 1500 : false;
+        },
+    });
+}
+
 export function useCancelJob() {
     const qc = useQueryClient();
     const { push } = useNotifications();
