@@ -110,6 +110,11 @@ async function bootstrap() {
             const path = request.url.split('?')[0];
             if (PUBLIC_ROUTES.has(path)) return;
             if (PUBLIC_PREFIXES.some((p) => path.startsWith(p))) return;
+            // SSE clients cannot send headers — allow token via query param
+            const query = request.query as Record<string, string>;
+            if (query['token']) {
+                request.headers['authorization'] = `Bearer ${query['token']}`;
+            }
             try {
                 await request.jwtVerify();
             } catch (err) {

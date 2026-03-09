@@ -71,7 +71,7 @@ export function createMetadataWorker(
             log.info({ documentId, jobId: job.id }, 'Metadata job complete');
         },
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        { connection: redis as any, concurrency: 2, stalledInterval: 30_000, maxStalledCount: 1 },
+        { connection: redis as any, concurrency: 1, stalledInterval: 30_000, maxStalledCount: 1 },
     );
 
     worker.on('failed', (job, err) => {
