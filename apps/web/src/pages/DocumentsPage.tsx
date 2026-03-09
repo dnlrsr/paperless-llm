@@ -196,7 +196,6 @@ function DocumentRow({ doc, expanded, onToggle }: {
                     {t(stage.labelKey)}
                   </button>
                 );
-                void ocrActive;
               })}
             </div>
             {selectedStages.includes('ocr') && (
