@@ -212,6 +212,7 @@ function DocumentRow({ doc, expanded, onToggle }: {
             <button
               role="switch"
               aria-checked={useExistingOnly}
+              aria-labelledby="use-existing-only-label"
               onClick={() => setUseExistingOnly((v) => !v)}
               className={`relative inline-flex h-5 w-9 shrink-0 rounded-full border-2 border-transparent transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 ${
                 useExistingOnly ? 'bg-primary-500' : 'bg-gray-200'
@@ -223,7 +224,7 @@ function DocumentRow({ doc, expanded, onToggle }: {
                 }`}
               />
             </button>
-            <span className="text-xs text-gray-600">{t('documents.useExistingOnly')}</span>
+            <span id="use-existing-only-label" className="text-xs text-gray-600">{t('documents.useExistingOnly')}</span>
           </div>
 
           {/* Action buttons */}
