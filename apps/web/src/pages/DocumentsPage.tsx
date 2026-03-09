@@ -5,7 +5,7 @@ import { useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Button, Card, EmptyState, Spinner } from '../components/ui';
 import { DOCUMENTS_KEY, useApplySuggestions, useDeleteSuggestions, useDocumentSuggestions, useGenerateDocument, usePaperlessCorrespondents, usePaperlessDocumentTypes, usePaperlessTags, usePatchSuggestions, usePendingDocuments } from '../hooks/useDocuments';
-import { useActiveJob } from '../hooks/useJobs';
+import { useActiveJob, useActiveJobForDocument } from '../hooks/useJobs';
 import { cn, formatDate } from '../lib/utils';
 import { useUISettings } from '../store';
 
@@ -120,17 +120,20 @@ function DocumentRow({ doc, expanded, onToggle }: {
     expanded ? doc.id : null,
   );
 
-  // Track live progress of the running job
+  // Track live progress of a user-triggered job
   const { data: activeJob } = useActiveJob(activeJobId);
 
-  // Capture jobId when generate succeeds
+  // Track auto-generate job initiated by the poller (only when expanded)
+  const { data: pollerJob } = useActiveJobForDocument(expanded ? doc.id : null);
+
+  // Capture jobId when user-triggered generate succeeds
   useEffect(() => {
     if (generate.data?.jobId) {
       setActiveJobId(generate.data.jobId);
     }
   }, [generate.data]);
 
-  // When job finishes, refresh suggestions and clear tracking
+  // When user-triggered job finishes, refresh suggestions and clear tracking
   useEffect(() => {
     if (!activeJob) return;
     if (activeJob.status === 'completed') {
@@ -142,6 +145,16 @@ function DocumentRow({ doc, expanded, onToggle }: {
     }
   }, [activeJob?.status, activeJob, doc.id, qc]);
 
+  // When the poller job disappears (auto-generate finished), refresh suggestions
+  const prevPollerJobRef = useRef<typeof pollerJob>(undefined);
+  useEffect(() => {
+    if (prevPollerJobRef.current != null && pollerJob == null) {
+      void qc.invalidateQueries({ queryKey: [DOCUMENTS_KEY, doc.id, 'suggestions'] });
+      void qc.invalidateQueries({ queryKey: [DOCUMENTS_KEY, 'pending'] });
+    }
+    prevPollerJobRef.current = pollerJob;
+  }, [pollerJob, doc.id, qc]);
+
   function toggleStage(id: string) {
     setSelectedStages((prev) =>
       prev.includes(id) ? prev.filter((s) => s !== id) : [...prev, id],
@@ -150,7 +163,11 @@ function DocumentRow({ doc, expanded, onToggle }: {
 
   const generating = generate.isPending && generate.variables?.id === doc.id;
   const applying = apply.isPending && apply.variables === doc.id;
-  const jobRunning = !!activeJobId && activeJob?.status !== 'completed' && activeJob?.status !== 'failed';
+  const userJobRunning = !!activeJobId && activeJob?.status !== 'completed' && activeJob?.status !== 'failed';
+  const pollerJobRunning = !!pollerJob;
+  const jobRunning = userJobRunning || pollerJobRunning;
+  // Prefer the user-triggered job for progress display; fall back to the poller job
+  const effectiveJob = userJobRunning ? activeJob : pollerJob;
 
   return (
     <Card className="p-0 overflow-hidden">
@@ -248,12 +265,12 @@ function DocumentRow({ doc, expanded, onToggle }: {
           </div>
 
           {/* Job progress — shown while a job is running */}
-          {jobRunning && activeJob && (
+          {jobRunning && effectiveJob && (
             <StageProgress
-              stages={activeJob.data?.stages ?? selectedStages}
-              currentStage={activeJob.currentStage ?? null}
-              progress={activeJob.progress}
-              status={activeJob.status}
+              stages={effectiveJob.data?.stages ?? selectedStages}
+              currentStage={effectiveJob.currentStage ?? null}
+              progress={effectiveJob.progress}
+              status={effectiveJob.status}
             />
           )}
 

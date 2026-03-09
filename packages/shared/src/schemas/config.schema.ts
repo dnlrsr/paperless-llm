@@ -78,6 +78,7 @@ export const AppConfigSchema = z.object({
     LOCAL_HOCR_PATH: z.string().default('/app/hocr'),
 
     // Auto-generation flags
+    MANUAL_AUTO_GENERATE: z.coerce.boolean().default(true),
     AUTO_GENERATE_TITLE: z.coerce.boolean().default(true),
     AUTO_GENERATE_TAGS: z.coerce.boolean().default(true),
     AUTO_GENERATE_CORRESPONDENTS: z.coerce.boolean().default(true),

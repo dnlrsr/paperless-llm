@@ -75,7 +75,7 @@ async function bootstrap() {
     createMetadataWorker(redis, stageDeps, db, paperlessClient);
     // createOcrWorker(redis, stageDeps, db, paperlessClient); // Phase 2
 
-    const polling = new PollingService(paperlessClient, queues, config);
+    const polling = new PollingService(paperlessClient, queues, config, db);
     polling.start();
 
     // ── 5. HTTP server ────────────────────────────────────────────────

@@ -110,6 +110,39 @@ export const jobRoutes: FastifyPluginAsync<JobsDeps> = async (fastify, opts) => 
         },
     );
 
+    // GET /jobs/active-for-document/:documentId — find an active/waiting metadata job for a document
+    fastify.get<{ Params: { documentId: string } }>(
+        '/jobs/active-for-document/:documentId',
+        async (req, reply) => {
+            const documentId = parseInt(req.params['documentId'], 10);
+            if (isNaN(documentId)) return reply.badRequest('Invalid documentId');
+
+            const [active, waiting] = await Promise.all([
+                queues.metadata.getActive(),
+                queues.metadata.getWaiting(),
+            ]);
+
+            const job = [...active, ...waiting].find(
+                (j) => (j.data as { documentId?: number }).documentId === documentId,
+            );
+
+            if (!job) return { job: null };
+
+            const { pct, currentStage } = parseProgress(job.progress);
+            return {
+                job: {
+                    id: job.id,
+                    type: 'metadata',
+                    data: job.data,
+                    progress: pct,
+                    currentStage,
+                    status: 'active',
+                    createdAt: new Date(job.timestamp).toISOString(),
+                },
+            };
+        },
+    );
+
     // GET /events — SSE stream
     fastify.get('/events', async (req, reply) => {
         reply.raw.setHeader('Content-Type', 'text/event-stream');
