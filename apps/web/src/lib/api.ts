@@ -5,9 +5,14 @@
 
 import type {
     DocumentSuggestions,
+    PaperlessCorrespondent,
     PaperlessDocument,
+    PaperlessDocumentType,
+    PaperlessTag,
 } from '@paperless-llm/shared';
 import { useAuthStore } from '../store';
+
+export type { DocumentSuggestions, PaperlessCorrespondent, PaperlessDocumentType, PaperlessTag };
 
 // ─── Base ────────────────────────────────────────────────────────────────────
 
@@ -60,6 +65,7 @@ export interface HealthStatus {
     version: string;
     checks: Record<string, boolean | null>;
     ollamaModel?: string;
+    ollamaError?: string;
 }
 
 export const healthApi = {
@@ -84,14 +90,20 @@ export const documentsApi = {
     getSuggestions: (id: number) =>
         request<DocumentSuggestions>(`/documents/${id}/suggestions`),
 
-    generate: (id: number, stages?: string[]) =>
+    generate: (id: number, stages?: string[], useExistingOnly?: boolean) =>
         request<GenerateResponse>(`/documents/${id}/generate`, {
             method: 'POST',
-            body: JSON.stringify({ stages }),
+            body: JSON.stringify({ stages, useExistingOnly }),
         }),
 
     applyAll: (id: number) =>
         request<{ success: boolean }>(`/documents/${id}/apply`, { method: 'POST' }),
+
+    patchSuggestions: (id: number, data: Partial<DocumentSuggestions>) =>
+        request<{ success: boolean }>(`/documents/${id}/suggestions`, {
+            method: 'PATCH',
+            body: JSON.stringify(data),
+        }),
 
     deleteSuggestions: (id: number) =>
         request<void>(`/documents/${id}/suggestions`, { method: 'DELETE' }),
@@ -167,6 +179,17 @@ export const analysisApi = {
             method: 'POST',
             body: JSON.stringify(body),
         }),
+};
+
+// ─── Paperless proxy ────────────────────────────────────────────────────────────
+
+export const paperlessApi = {
+    getTags: () =>
+        request<{ tags: PaperlessTag[] }>('/paperless/tags').then((r) => r.tags),
+    getCorrespondents: () =>
+        request<{ correspondents: PaperlessCorrespondent[] }>('/paperless/correspondents').then((r) => r.correspondents),
+    getDocumentTypes: () =>
+        request<{ documentTypes: PaperlessDocumentType[] }>('/paperless/document-types').then((r) => r.documentTypes),
 };
 
 // ─── Auth ────────────────────────────────────────────────────────────────────────────

@@ -34,6 +34,7 @@ export const AppConfigSchema = z.object({
     GOOGLEAI_API_KEY: z.string().optional(),
     OLLAMA_HOST: z.string().url().optional(),
     OLLAMA_CONTEXT_LENGTH: z.coerce.number().int().min(0).default(0),
+    OLLAMA_TEMPERATURE: z.coerce.number().min(0).max(2).optional(),
 
     // Vision LLM (for OCR)
     VISION_LLM_PROVIDER: z.enum(['openai', 'ollama', 'anthropic', 'mistral']).optional(),
@@ -83,6 +84,9 @@ export const AppConfigSchema = z.object({
     AUTO_GENERATE_DOCUMENT_TYPE: z.coerce.boolean().default(true),
     AUTO_GENERATE_CREATED_DATE: z.coerce.boolean().default(true),
     AUTO_GENERATE_CUSTOM_FIELDS: z.coerce.boolean().default(false),
+
+    // Restrict suggestions to items that already exist in paperless-ngx
+    USE_EXISTING_DATA_ONLY: z.coerce.boolean().default(true),
 
     CORRESPONDENT_BLACK_LIST: z
         .string()

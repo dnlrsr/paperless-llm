@@ -15,30 +15,53 @@ interface HealthDeps {
     config: AppConfig;
 }
 
+async function checkOllama(
+    rawHost: string,
+    model: string,
+): Promise<{ ok: boolean; error?: string }> {
+    const baseURL = rawHost.endsWith('/api') ? rawHost : `${rawHost.replace(/\/$/, '')}/api`;
+    try {
+        const res = await fetch(`${baseURL}/tags`, { signal: AbortSignal.timeout(5000) });
+        if (!res.ok) return { ok: false, error: `Ollama unreachable (HTTP ${res.status})` };
+        const body = await res.json() as { models?: Array<{ name: string }> };
+        // If the model has no explicit tag, Ollama resolves it to :latest
+        const hasTag = model.includes(':');
+        const found = (body.models ?? []).some((m) =>
+            hasTag ? m.name === model : m.name === model || m.name === `${model}:latest`,
+        );
+        if (!found) return { ok: false, error: `model '${model}' not found` };
+        return { ok: true };
+    } catch {
+        return { ok: false, error: 'Ollama unreachable' };
+    }
+}
+
 export const healthRoutes: FastifyPluginAsync<HealthDeps> = async (fastify, opts) => {
     fastify.get('/health', async (_req, reply) => {
-        const ollamaUrl = opts.config.LLM_PROVIDER === 'ollama' && opts.config.OLLAMA_HOST
+        const ollamaHost = opts.config.LLM_PROVIDER === 'ollama' && opts.config.OLLAMA_HOST
             ? opts.config.OLLAMA_HOST
             : null;
 
-        const [paperlessNgx, redisOk, dbOk, ollamaOk] = await Promise.all([
+        const ollamaResultPromise = ollamaHost
+            ? checkOllama(ollamaHost, opts.config.LLM_MODEL)
+            : Promise.resolve(null);
+
+        const [paperlessNgx, redisOk, dbOk, ollamaResult] = await Promise.all([
             opts.paperlessClient.ping().catch(() => false),
             opts.redis.ping().then(() => true).catch(() => false),
             Promise.resolve(true), // SQLite is always available if the process is running
-            ollamaUrl
-                ? fetch(`${ollamaUrl}/tags`, { signal: AbortSignal.timeout(5000) })
-                    .then((r) => r.ok)
-                    .catch(() => false)
-                : Promise.resolve(null),
+            ollamaResultPromise,
         ]);
 
+        const ollamaOk = ollamaResult === null ? null : ollamaResult.ok;
         const allOk = paperlessNgx && redisOk && dbOk && (ollamaOk !== false);
 
         return reply.status(200).send({
             status: allOk ? 'ok' : 'degraded',
             version: opts.version,
             checks: { paperlessNgx, redis: redisOk, database: dbOk, ollama: ollamaOk },
-            ...(ollamaUrl ? { ollamaModel: opts.config.LLM_MODEL } : {}),
+            ...(ollamaHost ? { ollamaModel: opts.config.LLM_MODEL } : {}),
+            ...(ollamaResult?.error ? { ollamaError: ollamaResult.error } : {}),
         });
     });
 

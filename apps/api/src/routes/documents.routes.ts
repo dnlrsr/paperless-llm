@@ -99,10 +99,11 @@ export const documentRoutes: FastifyPluginAsync<DocumentsDeps> = async (fastify,
 
             const parsed = GenerateRequestSchema.safeParse(req.body);
             const stages = parsed.success ? (parsed.data.stages ?? []) : [];
+            const useExistingOnly = parsed.success ? parsed.data.useExistingOnly : undefined;
 
             const job = await queues.metadata.add(
                 'metadata',
-                { documentId, mode: 'manual', stages },
+                { documentId, mode: 'manual', stages, useExistingOnly },
                 { jobId: `manual-${documentId}-${Date.now()}` },
             );
 
@@ -143,7 +144,7 @@ export const documentRoutes: FastifyPluginAsync<DocumentsDeps> = async (fastify,
             } as Partial<DocumentSuggestions>;
 
             const document = await paperlessClient.getDocument(documentId);
-            await paperlessClient.applySuggestions(document, suggestions);
+            const updatedDocument = await paperlessClient.applySuggestions(document, suggestions);
 
             // Mark as applied in DB
             db.update(schema.suggestions)
@@ -156,10 +157,11 @@ export const documentRoutes: FastifyPluginAsync<DocumentsDeps> = async (fastify,
                 )
                 .run();
 
-            // Remove MANUAL_TAG from document
+            // Remove MANUAL_TAG from document — use updatedDocument.tags so we don't
+            // overwrite the tags that were just applied by applySuggestions.
             const manualTag = await paperlessClient.getTagByName(config.MANUAL_TAG);
-            if (manualTag) {
-                const newTags = document.tags.filter((t) => t !== manualTag.id);
+            if (manualTag && updatedDocument.tags.includes(manualTag.id)) {
+                const newTags = updatedDocument.tags.filter((t) => t !== manualTag.id);
                 await paperlessClient.updateDocument(documentId, { tags: newTags });
             }
 
@@ -167,6 +169,57 @@ export const documentRoutes: FastifyPluginAsync<DocumentsDeps> = async (fastify,
             return { success: true };
         },
     );
+
+    // PATCH /documents/:id/suggestions — update pending suggestions (e.g. edit tags before applying)
+    fastify.patch<{ Params: { id: string }; Body: Partial<DocumentSuggestions> }>(
+        '/documents/:id/suggestions',
+        async (req, reply) => {
+            const documentId = parseInt(req.params['id'], 10);
+            if (isNaN(documentId)) return reply.badRequest('Invalid document id');
+
+            const body = req.body as Partial<DocumentSuggestions>;
+            const updates: Record<string, unknown> = {};
+            if (body.title !== undefined) updates['title'] = body.title;
+            if (body.tags !== undefined) updates['tags'] = body.tags;
+            if (body.correspondent !== undefined) updates['correspondent'] = body.correspondent;
+            if (body.documentType !== undefined) updates['documentType'] = body.documentType;
+            if (body.createdDate !== undefined) updates['createdDate'] = body.createdDate;
+            if (body.summary !== undefined) updates['summary'] = body.summary;
+
+            if (Object.keys(updates).length === 0) return reply.badRequest('No fields to update');
+
+            const result = db.update(schema.suggestions)
+                .set(updates)
+                .where(
+                    and(
+                        eq(schema.suggestions.documentId, documentId),
+                        eq(schema.suggestions.status, 'pending'),
+                    ),
+                )
+                .run();
+
+            if (result.changes === 0) return reply.notFound('No pending suggestions for this document');
+            return { success: true };
+        },
+    );
+
+    // GET /paperless/tags — proxy: list all tags from paperless-ngx (used by the tag picker UI)
+    fastify.get('/paperless/tags', async () => {
+        const tags = await paperlessClient.getTags();
+        return { tags };
+    });
+
+    // GET /paperless/correspondents — proxy: list all correspondents
+    fastify.get('/paperless/correspondents', async () => {
+        const correspondents = await paperlessClient.getCorrespondents();
+        return { correspondents };
+    });
+
+    // GET /paperless/document-types — proxy: list all document types
+    fastify.get('/paperless/document-types', async () => {
+        const documentTypes = await paperlessClient.getDocumentTypes();
+        return { documentTypes };
+    });
 
     // DELETE /documents/:id/suggestions — discard pending suggestions
     fastify.delete<{ Params: { id: string } }>(

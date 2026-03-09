@@ -1,4 +1,5 @@
 import { useEffect, useRef } from 'react';
+import { useAuthStore } from '../store';
 
 export interface SseEvent<T = unknown> {
     type: string;
@@ -22,12 +23,20 @@ export function useSse<T = unknown>(
     useEffect(() => {
         if (!enabled) return;
 
+        const token = useAuthStore.getState().token;
+        let urlWithToken = url;
+        if (token) {
+            const parsed = new URL(url, window.location.href);
+            parsed.searchParams.set('token', token);
+            urlWithToken = parsed.toString();
+        }
+
         let es: EventSource;
         let retryDelay = 1000;
         let cancelled = false;
 
         function connect() {
-            es = new EventSource(url);
+            es = new EventSource(urlWithToken);
 
             es.onmessage = (e: MessageEvent<string>) => {
                 try {

@@ -1,9 +1,11 @@
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
 import { ApiError, authApi } from '../lib/api';
 import { useAuthStore } from '../store';
 
 export function LoginPage() {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const setAuth = useAuthStore((s) => s.setAuth);
 
@@ -22,9 +24,9 @@ export function LoginPage() {
       navigate('/', { replace: true });
     } catch (err) {
       if (err instanceof ApiError && err.status === 401) {
-        setError('Invalid username or password.');
+        setError(t('login.invalidCredentials'));
       } else {
-        setError('Login failed. Please try again.');
+        setError(t('login.failed'));
       }
     } finally {
       setLoading(false);
@@ -35,14 +37,14 @@ export function LoginPage() {
     <div className="min-h-screen flex items-center justify-center bg-gray-950">
       <div className="w-full max-w-sm">
         <div className="mb-8 text-center">
-          <h1 className="text-2xl font-bold text-white">paperless-llm</h1>
-          <p className="mt-1 text-sm text-gray-400">Sign in with your Paperless-ngx credentials</p>
+          <h1 className="text-2xl font-bold text-white">{t('login.title')}</h1>
+          <p className="mt-1 text-sm text-gray-400">{t('login.subtitle')}</p>
         </div>
 
         <form onSubmit={(e) => void handleSubmit(e)} className="space-y-4 bg-gray-900 p-8 rounded-xl border border-gray-800 shadow-xl">
           <div>
             <label htmlFor="username" className="block text-sm font-medium text-gray-300 mb-1">
-              Username
+              {t('login.username')}
             </label>
             <input
               id="username"
@@ -52,14 +54,14 @@ export function LoginPage() {
               value={username}
               onChange={(e) => setUsername(e.target.value)}
               className="w-full rounded-lg bg-gray-800 border border-gray-700 text-white px-3 py-2 text-sm placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              placeholder="admin"
+              placeholder={t('login.usernamePlaceholder')}
               disabled={loading}
             />
           </div>
 
           <div>
             <label htmlFor="password" className="block text-sm font-medium text-gray-300 mb-1">
-              Password
+              {t('login.password')}
             </label>
             <input
               id="password"
@@ -69,7 +71,7 @@ export function LoginPage() {
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               className="w-full rounded-lg bg-gray-800 border border-gray-700 text-white px-3 py-2 text-sm placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              placeholder="••••••••"
+              placeholder={t('login.passwordPlaceholder')}
               disabled={loading}
             />
           </div>
@@ -85,7 +87,7 @@ export function LoginPage() {
             disabled={loading}
             className="w-full rounded-lg bg-blue-600 hover:bg-blue-500 disabled:opacity-50 disabled:cursor-not-allowed text-white font-medium py-2 text-sm transition-colors"
           >
-            {loading ? 'Signing in…' : 'Sign in'}
+            {loading ? t('login.submitting') : t('login.submit')}
           </button>
         </form>
       </div>

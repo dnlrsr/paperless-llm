@@ -8,21 +8,24 @@ export class OllamaProvider implements TextLLMProvider, VisionLLMProvider {
     readonly modelName: string;
 
     private readonly client: ReturnType<typeof createOllama>;
+    private readonly defaultTemperature: number | undefined;
 
-    constructor(config: Pick<AppConfig, 'OLLAMA_HOST' | 'LLM_MODEL'>) {
+    constructor(config: Pick<AppConfig, 'OLLAMA_HOST' | 'LLM_MODEL' | 'OLLAMA_TEMPERATURE'>) {
         this.modelName = config.LLM_MODEL;
-        this.client = createOllama({
-            baseURL: config.OLLAMA_HOST ?? 'http://localhost:11434/api',
-        });
+        this.defaultTemperature = config.OLLAMA_TEMPERATURE;
+        const rawHost = config.OLLAMA_HOST ?? 'http://localhost:11434';
+        const baseURL = rawHost.endsWith('/api') ? rawHost : `${rawHost.replace(/\/$/, '')}/api`;
+        this.client = createOllama({ baseURL });
     }
 
     async generateText(systemPrompt: string, userPrompt: string, options?: LLMOptions): Promise<string> {
+        const temperature = options?.temperature ?? this.defaultTemperature;
         const result = await generateText({
             model: this.client(this.modelName),
             system: systemPrompt,
             prompt: userPrompt,
             maxTokens: options?.maxTokens,
-            temperature: options?.temperature,
+            ...(temperature !== undefined && { temperature }),
         });
         return result.text;
     }
@@ -37,13 +40,14 @@ export class OllamaProvider implements TextLLMProvider, VisionLLMProvider {
                 },
         );
 
+        const temperature = options?.temperature ?? this.defaultTemperature;
         const result = await generateText({
             model: this.client(this.modelName),
             messages: [
                 { role: 'user', content: [{ type: 'text', text: prompt }, ...content] },
             ],
             maxTokens: options?.maxTokens,
-            temperature: options?.temperature,
+            ...(temperature !== undefined && { temperature }),
         });
         return result.text;
     }

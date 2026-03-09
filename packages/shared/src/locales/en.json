@@ -22,6 +22,8 @@
         "prev": "Previous",
         "next": "Next",
         "page": "Page",
+        "on": "On",
+        "off": "Off",
         "status": {
             "pending": "Pending",
             "active": "Processing",
@@ -61,6 +63,8 @@
         "noPendingDesc": "No documents are waiting to be reviewed.",
         "stages": "Stages to run",
         "ocrWarning": "OCR downloads the PDF and calls the LLM for each page — use only when needed.",
+        "useExistingOnly": "Existing items only",
+        "useExistingOnlyDesc": "Restrict suggestions to tags, correspondents and document types already in paperless-ngx",
         "generate": "Generate Suggestions",
         "applyAll": "Apply All",
         "documentTitle": "Document Title",
@@ -77,6 +81,7 @@
         "jobCompleted": "Done",
         "jobFailed": "Failed",
         "originalText": "Original text",
+        "addTag": "Add tag…",
         "fields": {
             "title": "Title",
             "tags": "Tags",
@@ -132,6 +137,8 @@
         "saved": "Settings saved",
         "language": "Language",
         "pageSize": "Page Size",
+        "useExistingOnly": "Use Existing Items Only",
+        "useExistingOnlyDesc": "When enabled, the AI will only suggest tags, correspondents, and document types that already exist in paperless-ngx. When disabled, new items may be created.",
         "systemInfo": "System Info",
         "version": "Version",
         "status": "Status",
@@ -186,5 +193,17 @@
         "applyFailed": "Apply failed",
         "saveFailed": "Save failed",
         "resetFailed": "Reset failed"
+    },
+    "login": {
+        "title": "paperless-llm",
+        "subtitle": "Sign in with your Paperless-ngx credentials",
+        "username": "Username",
+        "usernamePlaceholder": "Enter your username",
+        "password": "Password",
+        "passwordPlaceholder": "Enter your password",
+        "submit": "Sign in",
+        "submitting": "Signing in…",
+        "invalidCredentials": "Invalid username or password.",
+        "failed": "Login failed. Please try again."
     }
 }

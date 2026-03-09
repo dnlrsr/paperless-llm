@@ -22,6 +22,8 @@ export const ApplySuggestionsRequestSchema = z.object({
 
 export const GenerateRequestSchema = z.object({
     stages: z.array(z.string()).optional(),
+    /** When true, only suggest items that already exist in paperless-ngx. Defaults to global config. */
+    useExistingOnly: z.boolean().optional(),
 });
 
 export const AnalysisRequestSchema = z.object({

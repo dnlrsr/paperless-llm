@@ -65,6 +65,7 @@ async function bootstrap() {
         paperlessClient,
         promptEngine,
         config,
+        useExistingOnly: config.USE_EXISTING_DATA_ONLY,
     };
 
     // ── 4. Job queue ──────────────────────────────────────────────────
@@ -109,6 +110,13 @@ async function bootstrap() {
             const path = request.url.split('?')[0];
             if (PUBLIC_ROUTES.has(path)) return;
             if (PUBLIC_PREFIXES.some((p) => path.startsWith(p))) return;
+            // SSE clients cannot send headers — allow token via query param only for SSE endpoint
+            if (path.startsWith('/api/events')) {
+                const query = request.query as Record<string, string>;
+                if (query['token']) {
+                    request.headers['authorization'] = `Bearer ${query['token']}`;
+                }
+            }
             try {
                 await request.jwtVerify();
             } catch (err) {

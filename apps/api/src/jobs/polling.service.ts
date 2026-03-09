@@ -85,6 +85,7 @@ export class PollingService {
                             documentId: doc.id,
                             mode: mapping.jobMode,
                             stages: [],
+                            useExistingOnly: this.config.USE_EXISTING_DATA_ONLY,
                         },
                         { jobId },
                     );

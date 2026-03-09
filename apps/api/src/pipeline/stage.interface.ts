@@ -14,6 +14,11 @@ export interface StageDependencies {
     paperlessClient: PaperlessClient;
     promptEngine: PromptEngine;
     config: AppConfig;
+    /**
+     * When true, stages must only suggest tags / correspondents / document types
+     * that already exist in paperless-ngx. Defaults to config.USE_EXISTING_DATA_ONLY.
+     */
+    useExistingOnly: boolean;
 }
 
 export interface PipelineStage {

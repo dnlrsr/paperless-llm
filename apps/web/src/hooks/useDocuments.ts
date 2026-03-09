@@ -1,10 +1,11 @@
+import type { DocumentSuggestions } from '@paperless-llm/shared';
 import {
     useMutation,
     useQuery,
     useQueryClient,
 } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
-import { documentsApi } from '../lib/api';
+import { documentsApi, paperlessApi } from '../lib/api';
 import { useNotifications } from '../store';
 
 export const DOCUMENTS_KEY = 'documents';
@@ -30,8 +31,8 @@ export function useGenerateDocument() {
     const { t } = useTranslation();
 
     return useMutation({
-        mutationFn: ({ id, stages }: { id: number; stages?: string[] }) =>
-            documentsApi.generate(id, stages),
+        mutationFn: ({ id, stages, useExistingOnly }: { id: number; stages?: string[]; useExistingOnly?: boolean }) =>
+            documentsApi.generate(id, stages, useExistingOnly),
         onSuccess: () => {
             void qc.invalidateQueries({ queryKey: ['jobs'] });
             push({ kind: 'info', title: t('pipeline.jobQueued') });
@@ -60,13 +61,45 @@ export function useApplySuggestions() {
     });
 }
 
+export function usePatchSuggestions() {
+    return useMutation({
+        mutationFn: ({ id, data }: { id: number; data: Partial<DocumentSuggestions> }) =>
+            documentsApi.patchSuggestions(id, data),
+    });
+}
+
+export function usePaperlessTags() {
+    return useQuery({
+        queryKey: ['paperless', 'tags'],
+        queryFn: () => paperlessApi.getTags(),
+        staleTime: 5 * 60 * 1000,
+    });
+}
+
+export function usePaperlessCorrespondents() {
+    return useQuery({
+        queryKey: ['paperless', 'correspondents'],
+        queryFn: () => paperlessApi.getCorrespondents(),
+        staleTime: 5 * 60 * 1000,
+    });
+}
+
+export function usePaperlessDocumentTypes() {
+    return useQuery({
+        queryKey: ['paperless', 'document-types'],
+        queryFn: () => paperlessApi.getDocumentTypes(),
+        staleTime: 5 * 60 * 1000,
+    });
+}
+
 export function useDeleteSuggestions() {
     const qc = useQueryClient();
 
     return useMutation({
         mutationFn: (id: number) => documentsApi.deleteSuggestions(id),
         onSuccess: (_data, id) => {
-            void qc.invalidateQueries({ queryKey: [DOCUMENTS_KEY, id, 'suggestions'] });
+            qc.removeQueries({ queryKey: [DOCUMENTS_KEY, id, 'suggestions'] });
+            void qc.invalidateQueries({ queryKey: [DOCUMENTS_KEY, 'pending'] });
         },
     });
 }

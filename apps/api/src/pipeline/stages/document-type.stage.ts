@@ -21,6 +21,7 @@ export class DocumentTypeStage extends BasePipelineStage {
             AvailableDocumentTypes: availableNames,
             Title: ctx.originalMetadata.title,
             Content: truncate(ctx.content, deps.config.TOKEN_LIMIT),
+            UseExistingOnly: deps.useExistingOnly,
         });
 
         const raw = await deps.llmProvider.generateText(
@@ -29,8 +30,16 @@ export class DocumentTypeStage extends BasePipelineStage {
         );
 
         const trimmed = raw.trim();
-        const documentType =
-            trimmed === 'null' || trimmed === '' || !availableNames.includes(trimmed) ? null : trimmed;
+        let documentType: string | null;
+
+        if (trimmed === 'null' || trimmed === '') {
+            documentType = null;
+        } else if (deps.useExistingOnly && !availableNames.includes(trimmed)) {
+            // When restricted to existing items, discard types not in paperless-ngx
+            documentType = null;
+        } else {
+            documentType = trimmed;
+        }
 
         return updateContext(ctx, {
             suggestions: { ...ctx.suggestions, documentType },

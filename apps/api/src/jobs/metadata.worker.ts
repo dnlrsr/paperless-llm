@@ -26,7 +26,13 @@ export function createMetadataWorker(
     const worker = new Worker<MetadataJobData>(
         METADATA_QUEUE,
         async (job: Job<MetadataJobData>) => {
-            const { documentId, mode, stages } = job.data;
+            const { documentId, mode, stages, useExistingOnly } = job.data;
+
+            // Resolve effective flag: per-job override → global config
+            const jobDeps: StageDependencies = {
+                ...deps,
+                useExistingOnly: useExistingOnly ?? deps.config.USE_EXISTING_DATA_ONLY,
+            };
 
             log.info({ documentId, jobId: job.id }, 'Starting metadata job');
             await job.updateProgress(5);
@@ -41,7 +47,7 @@ export function createMetadataWorker(
                 suggestions: {},
             };
 
-            const result = await pipeline.run(ctx, deps, mode, stages, async (pct, stage) => {
+            const result = await pipeline.run(ctx, jobDeps, mode, stages, async (pct, stage) => {
                 await job.updateProgress({ pct, stage });
             });
             await job.updateProgress({ pct: 85, stage: null });
@@ -65,7 +71,7 @@ export function createMetadataWorker(
             log.info({ documentId, jobId: job.id }, 'Metadata job complete');
         },
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        { connection: redis as any, concurrency: 2 },
+        { connection: redis as any, concurrency: 1, stalledInterval: 30_000, maxStalledCount: 1 },
     );
 
     worker.on('failed', (job, err) => {

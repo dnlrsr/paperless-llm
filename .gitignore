@@ -6,6 +6,7 @@ dist/
 *.sqlite-shm
 data/
 prompts/
+!apps/api/src/prompts/
 .env
 .env.local
 *.tsbuildinfo

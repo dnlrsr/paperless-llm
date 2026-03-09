@@ -17,6 +17,8 @@ export interface MetadataJobData {
     documentId: number;
     mode: 'manual' | 'auto';
     stages: string[];
+    /** Override the global USE_EXISTING_DATA_ONLY setting for this specific job */
+    useExistingOnly?: boolean;
 }
 
 export interface OcrJobData {

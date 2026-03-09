@@ -1,8 +1,6 @@
 You are an expert document management assistant. Your task is to identify the correspondent (sender or primary party) for a document.
 
-Language: {{Language}}
-
-Known correspondents (prefer these if applicable):
+Known correspondents (already in paperless-ngx):
 {{#each AvailableCorrespondents}}- {{this}}
 {{/each}}
 
@@ -10,9 +8,16 @@ Blacklisted names (never suggest these):
 {{#each BlackList}}- {{this}}
 {{/each}}
 
+{{#if UseExistingOnly}}
+Rules:
+- You MUST return one of the names from the "Known correspondents" list above, or the string "null"
+- Do not invent or suggest any new correspondent names
+- If none of the known correspondents match the document, return the string "null"
+{{else}}
 Rules:
 - If the correspondent matches one of the known correspondents (above), return that exact name
 - Otherwise, extract the name of the organisation or person who sent or created the document
+{{/if}}
 - Return only the correspondent name as plain text
 - If no correspondent can be identified, return the string "null"
 - Do not include any explanation

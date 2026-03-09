@@ -22,6 +22,8 @@
         "prev": "Zurück",
         "next": "Weiter",
         "page": "Seite",
+        "on": "An",
+        "off": "Aus",
         "status": {
             "pending": "Ausstehend",
             "active": "Wird verarbeitet",
@@ -61,6 +63,8 @@
         "noPendingDesc": "Keine Dokumente warten auf Überprüfung.",
         "stages": "Auszuführende Schritte",
         "ocrWarning": "OCR lädt die PDF herunter und ruft das LLM für jede Seite auf — nur bei Bedarf verwenden.",
+        "useExistingOnly": "Nur vorhandene Einträge",
+        "useExistingOnlyDesc": "Vorschläge auf bereits in paperless-ngx vorhandene Tags, Korrespondenten und Dokumenttypen beschränken",
         "generate": "Vorschläge generieren",
         "applyAll": "Alle übernehmen",
         "documentTitle": "Dokumenttitel",
@@ -77,6 +81,7 @@
         "jobCompleted": "Fertig",
         "jobFailed": "Fehlgeschlagen",
         "originalText": "Originaltext",
+        "addTag": "Tag hinzufügen…",
         "fields": {
             "title": "Titel",
             "tags": "Tags",
@@ -132,6 +137,8 @@
         "saved": "Einstellungen gespeichert",
         "language": "Sprache",
         "pageSize": "Seitengröße",
+        "useExistingOnly": "Nur vorhandene Einträge verwenden",
+        "useExistingOnlyDesc": "Wenn aktiviert, schlägt die KI nur Tags, Korrespondenten und Dokumenttypen vor, die bereits in paperless-ngx existieren. Wenn deaktiviert, können neue Einträge erstellt werden.",
         "systemInfo": "Systeminformationen",
         "version": "Version",
         "status": "Status",
@@ -186,5 +193,17 @@
         "applyFailed": "Übernehmen fehlgeschlagen",
         "saveFailed": "Speichern fehlgeschlagen",
         "resetFailed": "Zurücksetzen fehlgeschlagen"
+    },
+    "login": {
+        "title": "paperless-llm",
+        "subtitle": "Mit Ihren Paperless-ngx-Zugangsdaten anmelden",
+        "username": "Benutzername",
+        "usernamePlaceholder": "Benutzername eingeben",
+        "password": "Passwort",
+        "passwordPlaceholder": "Passwort eingeben",
+        "submit": "Anmelden",
+        "submitting": "Anmeldung läuft…",
+        "invalidCredentials": "Ungültiger Benutzername oder falsches Passwort.",
+        "failed": "Anmeldung fehlgeschlagen. Bitte erneut versuchen."
     }
 }

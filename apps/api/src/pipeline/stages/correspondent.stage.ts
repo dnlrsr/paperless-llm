@@ -22,6 +22,7 @@ export class CorrespondentStage extends BasePipelineStage {
             BlackList: deps.config.CORRESPONDENT_BLACK_LIST,
             Title: ctx.originalMetadata.title,
             Content: truncate(ctx.content, deps.config.TOKEN_LIMIT),
+            UseExistingOnly: deps.useExistingOnly,
         });
 
         const raw = await deps.llmProvider.generateText(
@@ -30,7 +31,16 @@ export class CorrespondentStage extends BasePipelineStage {
         );
 
         const trimmed = raw.trim();
-        const correspondent = trimmed === 'null' || trimmed === '' ? null : trimmed;
+        let correspondent: string | null;
+
+        if (trimmed === 'null' || trimmed === '') {
+            correspondent = null;
+        } else if (deps.useExistingOnly && !availableNames.includes(trimmed)) {
+            // When restricted to existing items, discard names not in paperless-ngx
+            correspondent = null;
+        } else {
+            correspondent = trimmed;
+        }
 
         return updateContext(ctx, {
             suggestions: { ...ctx.suggestions, correspondent },
