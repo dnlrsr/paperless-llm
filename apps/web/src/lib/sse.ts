@@ -24,7 +24,12 @@ export function useSse<T = unknown>(
         if (!enabled) return;
 
         const token = useAuthStore.getState().token;
-        const urlWithToken = token ? `${url}?token=${encodeURIComponent(token)}` : url;
+        let urlWithToken = url;
+        if (token) {
+            const parsed = new URL(url, window.location.href);
+            parsed.searchParams.set('token', token);
+            urlWithToken = parsed.toString();
+        }
 
         let es: EventSource;
         let retryDelay = 1000;
