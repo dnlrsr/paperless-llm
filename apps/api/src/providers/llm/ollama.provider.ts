@@ -3,6 +3,10 @@ import { generateText } from 'ai';
 import { createOllama } from 'ollama-ai-provider';
 import type { TextLLMProvider, VisionLLMProvider } from './interface.js';
 
+// Maximum safe value for setTimeout delay (2^31 - 1 milliseconds ≈ 24.8 days).
+// Values larger than this cause setTimeout to fire immediately due to overflow.
+const MAX_SAFE_TIMEOUT_MS = 2_147_483_647;
+
 export class OllamaProvider implements TextLLMProvider, VisionLLMProvider {
     readonly providerName = 'ollama';
     readonly modelName: string;
@@ -15,22 +19,26 @@ export class OllamaProvider implements TextLLMProvider, VisionLLMProvider {
         this.modelName = config.LLM_MODEL;
         this.defaultTemperature = config.OLLAMA_TEMPERATURE;
         const timeoutSeconds = config.OLLAMA_REQUEST_TIMEOUT_SECONDS ?? 600;
-        this.requestTimeoutMs = timeoutSeconds === 0 ? 0 : timeoutSeconds * 1000;
+        // Clamp to MAX_SAFE_TIMEOUT_MS to prevent setTimeout integer overflow.
+        this.requestTimeoutMs = timeoutSeconds === 0 ? 0 : Math.min(timeoutSeconds * 1000, MAX_SAFE_TIMEOUT_MS);
         const rawHost = config.OLLAMA_HOST ?? 'http://localhost:11434';
         const baseURL = rawHost.endsWith('/api') ? rawHost : `${rawHost.replace(/\/$/, '')}/api`;
         this.client = createOllama({
             baseURL,
-            // Use a custom fetch that aborts after OLLAMA_REQUEST_TIMEOUT_SECONDS.
-            // This prevents "client closed connection" errors when a large model is
-            // being cold-loaded into GPU memory and the default Node.js socket
-            // timeout fires first.
+            // Apply a configurable per-request timeout via AbortController.
+            // When a large model is being cold-loaded, requests can hang for
+            // several minutes. Set OLLAMA_REQUEST_TIMEOUT_SECONDS to control
+            // how long to wait; 0 disables the timeout (wait indefinitely).
             ...(this.requestTimeoutMs > 0 && {
                 fetch: (input: RequestInfo | URL, init?: RequestInit) => {
                     const controller = new AbortController();
                     const timer = setTimeout(() => controller.abort(), this.requestTimeoutMs);
-                    return fetch(input, { ...init, signal: controller.signal }).finally(() =>
-                        clearTimeout(timer),
-                    );
+                    // Combine our timeout signal with any upstream signal so that
+                    // both caller-initiated cancellation and our timeout are honored.
+                    const signal = init?.signal
+                        ? AbortSignal.any([controller.signal, init.signal as AbortSignal])
+                        : controller.signal;
+                    return fetch(input, { ...init, signal }).finally(() => clearTimeout(timer));
                 },
             }),
         });
