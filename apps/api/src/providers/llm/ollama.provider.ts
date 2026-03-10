@@ -9,13 +9,31 @@ export class OllamaProvider implements TextLLMProvider, VisionLLMProvider {
 
     private readonly client: ReturnType<typeof createOllama>;
     private readonly defaultTemperature: number | undefined;
+    private readonly requestTimeoutMs: number;
 
-    constructor(config: Pick<AppConfig, 'OLLAMA_HOST' | 'LLM_MODEL' | 'OLLAMA_TEMPERATURE'>) {
+    constructor(config: Pick<AppConfig, 'OLLAMA_HOST' | 'LLM_MODEL' | 'OLLAMA_TEMPERATURE' | 'OLLAMA_REQUEST_TIMEOUT_SECONDS'>) {
         this.modelName = config.LLM_MODEL;
         this.defaultTemperature = config.OLLAMA_TEMPERATURE;
+        const timeoutSeconds = config.OLLAMA_REQUEST_TIMEOUT_SECONDS ?? 600;
+        this.requestTimeoutMs = timeoutSeconds === 0 ? 0 : timeoutSeconds * 1000;
         const rawHost = config.OLLAMA_HOST ?? 'http://localhost:11434';
         const baseURL = rawHost.endsWith('/api') ? rawHost : `${rawHost.replace(/\/$/, '')}/api`;
-        this.client = createOllama({ baseURL });
+        this.client = createOllama({
+            baseURL,
+            // Use a custom fetch that aborts after OLLAMA_REQUEST_TIMEOUT_SECONDS.
+            // This prevents "client closed connection" errors when a large model is
+            // being cold-loaded into GPU memory and the default Node.js socket
+            // timeout fires first.
+            ...(this.requestTimeoutMs > 0 && {
+                fetch: (input: RequestInfo | URL, init?: RequestInit) => {
+                    const controller = new AbortController();
+                    const timer = setTimeout(() => controller.abort(), this.requestTimeoutMs);
+                    return fetch(input, { ...init, signal: controller.signal }).finally(() =>
+                        clearTimeout(timer),
+                    );
+                },
+            }),
+        });
     }
 
     async generateText(systemPrompt: string, userPrompt: string, options?: LLMOptions): Promise<string> {
