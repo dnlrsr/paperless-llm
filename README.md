@@ -33,6 +33,54 @@ Tag a document with `paperless-llm` in paperless-ngx — that's it. paperless-ll
 
 ---
 
+## Quickstart
+
+The fastest way to get running — no build required.
+
+**1. Grab the environment file**
+
+```bash
+curl -O https://raw.githubusercontent.com/dnlrsr/paperless-llm/main/.env.example
+cp .env.example .env
+```
+
+Open `.env` and set at minimum:
+
+```dotenv
+PAPERLESS_BASE_URL=http://your-paperless-host:8000
+PAPERLESS_API_TOKEN=your-token-here
+
+LLM_PROVIDER=openai
+LLM_MODEL=gpt-4o-mini
+OPENAI_API_KEY=sk-...
+
+JWT_SECRET=change-me-min-32-chars
+```
+
+**2. Create a `docker-compose.yml`**
+
+```yaml
+services:
+  paperless-llm:
+    image: ghcr.io/dnlrsr/paperless-llm:latest
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    env_file: .env
+```
+
+**3. Start**
+
+```bash
+docker compose up -d
+```
+
+Open **http://localhost:3000** — done.
+
+> **Tip:** Replace `latest` with a specific tag (e.g. `v1.2.0`) to pin to a known release. All published images are listed on the [GitHub packages page](https://github.com/dnlrsr/paperless-llm/pkgs/container/paperless-llm).
+
+---
+
 ## Getting started
 
 ### Prerequisites
