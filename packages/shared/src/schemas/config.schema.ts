@@ -38,7 +38,8 @@ export const AppConfigSchema = z.object({
     // How long to wait for a single Ollama HTTP response (seconds).
     // Increase this when using large models that need time to cold-load.
     // 0 means no timeout (wait forever).
-    OLLAMA_REQUEST_TIMEOUT_SECONDS: z.coerce.number().int().min(0).default(600),
+    // Upper bound is Math.floor((2^31 - 1) / 1000) to prevent setTimeout overflow.
+    OLLAMA_REQUEST_TIMEOUT_SECONDS: z.coerce.number().int().min(0).max(2147483).default(600),
 
     // Vision LLM (for OCR)
     VISION_LLM_PROVIDER: z.enum(['openai', 'ollama', 'anthropic', 'mistral']).optional(),
