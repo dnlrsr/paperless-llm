@@ -28,7 +28,10 @@ export class OllamaProvider implements TextLLMProvider, VisionLLMProvider {
                 fetch: (input: RequestInfo | URL, init?: RequestInit) => {
                     const controller = new AbortController();
                     const timer = setTimeout(() => controller.abort(), this.requestTimeoutMs);
-                    return fetch(input, { ...init, signal: controller.signal }).finally(() =>
+                    const signals: AbortSignal[] = [controller.signal];
+                    if (init?.signal) signals.push(init.signal);
+                    const signal = AbortSignal.any(signals);
+                    return fetch(input, { ...init, signal }).finally(() =>
                         clearTimeout(timer),
                     );
                 },
