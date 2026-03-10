@@ -35,6 +35,11 @@ export const AppConfigSchema = z.object({
     OLLAMA_HOST: z.string().url().optional(),
     OLLAMA_CONTEXT_LENGTH: z.coerce.number().int().min(0).default(0),
     OLLAMA_TEMPERATURE: z.coerce.number().min(0).max(2).optional(),
+    // How long to wait for a single Ollama HTTP response (seconds).
+    // Increase this when using large models that need time to cold-load.
+    // 0 means no timeout (wait forever). Max is 2,147,483 s (~24.8 days)
+    // to avoid setTimeout integer overflow.
+    OLLAMA_REQUEST_TIMEOUT_SECONDS: z.coerce.number().int().min(0).max(2_147_483).default(600),
 
     // Vision LLM (for OCR)
     VISION_LLM_PROVIDER: z.enum(['openai', 'ollama', 'anthropic', 'mistral']).optional(),

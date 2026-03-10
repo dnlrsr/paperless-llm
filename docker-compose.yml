@@ -63,6 +63,29 @@ services:
       retries: 10
       start_period: 60s
 
+  # ─── Ollama (optional – remove if you run Ollama outside Docker) ────────────
+  # Uncomment this block to run Ollama as part of this Compose project.
+  #
+  # ollama:
+  #   image: ollama/ollama:latest
+  #   restart: unless-stopped
+  #   environment:
+  #     # Keep models loaded in VRAM for 2 hours after last request.
+  #     # Use -1 to keep them loaded indefinitely.
+  #     OLLAMA_KEEP_ALIVE: 2h
+  #   ports:
+  #     - "11434:11434"
+  #   volumes:
+  #     - ollama_data:/root/.ollama
+  #   # Uncomment and adjust for GPU passthrough:
+  #   # deploy:
+  #   #   resources:
+  #   #     reservations:
+  #   #       devices:
+  #   #         - driver: nvidia
+  #   #           count: all
+  #   #           capabilities: [gpu]
+
   # ─── paperless-llm (API + Web UI) ───────────────────────────────────────────
 
   paperless-llm:
