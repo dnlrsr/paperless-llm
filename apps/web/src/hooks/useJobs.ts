@@ -5,6 +5,8 @@ import type { SseEvent } from '../lib/sse';
 import { useSse } from '../lib/sse';
 import { useNotifications } from '../store';
 
+const HEALTH_KEY = 'health';
+
 export const JOBS_KEY = 'jobs';
 
 export function useJobs(page = 1, pageSize = 25) {
@@ -73,12 +75,27 @@ export function useCancelJob() {
 /** Subscribe to live job progress via SSE and invalidate the jobs query. */
 export function useJobSseUpdates() {
     const qc = useQueryClient();
+    const { push } = useNotifications();
+    const { t } = useTranslation();
 
-    useSse<{ jobId: string; progress: number; status: string }>(
+    useSse<Record<string, unknown>>(
         '/api/events',
-        (event: SseEvent<{ jobId: string; progress: number; status: string }>) => {
-            if (event.type === 'job:progress' || event.type === 'job:complete' || event.type === 'job:failed') {
+        (event: SseEvent<Record<string, unknown>>) => {
+            if (event.type === 'job.progress' || event.type === 'job.completed' || event.type === 'job.failed') {
                 void qc.invalidateQueries({ queryKey: [JOBS_KEY] });
+            }
+
+            if (event.type === 'ollama.warmup') {
+                const state = event.payload['state'] as string | undefined;
+                // Invalidate health so the dashboard reflects the new warmup state.
+                void qc.invalidateQueries({ queryKey: [HEALTH_KEY] });
+                if (state === 'warming') {
+                    push({ kind: 'info', title: t('ollama.warming') });
+                } else if (state === 'ready') {
+                    push({ kind: 'success', title: t('ollama.ready') });
+                } else if (state === 'error') {
+                    push({ kind: 'error', title: t('ollama.error') });
+                }
             }
         },
     );

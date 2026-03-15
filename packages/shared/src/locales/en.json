@@ -194,6 +194,12 @@
         "saveFailed": "Save failed",
         "resetFailed": "Reset failed"
     },
+    "ollama": {
+        "warming": "LLM model loading into memory…",
+        "ready": "LLM model ready",
+        "error": "LLM model failed to load",
+        "warmingStatus": "Warming up"
+    },
     "login": {
         "title": "paperless-llm",
         "subtitle": "Sign in with your Paperless-ngx credentials",

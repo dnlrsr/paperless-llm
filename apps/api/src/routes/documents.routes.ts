@@ -9,6 +9,7 @@ import type { Database } from '../db/connection.js';
 import * as schema from '../db/schema.js';
 import type { Queues } from '../jobs/queues.js';
 import type { PaperlessClient } from '../paperless/client.js';
+import type { OllamaWarmupService } from '../providers/llm/ollama-warmup.service.js';
 import type { SseService } from '../sse/sse.service.js';
 
 interface DocumentsDeps {
@@ -17,6 +18,7 @@ interface DocumentsDeps {
     queues: Queues;
     sse: SseService;
     config: AppConfig;
+    warmup?: OllamaWarmupService;
 }
 
 export const documentRoutes: FastifyPluginAsync<DocumentsDeps> = async (fastify, opts) => {
@@ -100,6 +102,9 @@ export const documentRoutes: FastifyPluginAsync<DocumentsDeps> = async (fastify,
             const parsed = GenerateRequestSchema.safeParse(req.body);
             const stages = parsed.success ? (parsed.data.stages ?? []) : [];
             const useExistingOnly = parsed.success ? parsed.data.useExistingOnly : undefined;
+
+            // Trigger model warmup now that we know a job is about to be enqueued.
+            void opts.warmup?.start();
 
             const job = await queues.metadata.add(
                 'metadata',

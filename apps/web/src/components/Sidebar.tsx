@@ -120,12 +120,19 @@ function SidebarStatus() {
     (j) => j.status === 'active' || j.status === 'waiting',
   ) ?? [];
 
-  const checks: Array<{ key: string; label: string; sublabel?: string; tooltip?: string; ok: boolean | null }> = [
+  const checks: Array<{ key: string; label: string; sublabel?: string; tooltip?: string; ok: boolean | null; warming?: boolean }> = [
     { key: 'paperlessNgx', label: 'paperless-ngx',      ok: health?.checks.paperlessNgx ?? null },
     { key: 'redis',        label: 'Redis',               ok: health?.checks.redis        ?? null },
     { key: 'database',     label: t('dashboard.database'), ok: health?.checks.database   ?? null },
     ...(health?.checks.ollama !== undefined
-      ? [{ key: 'ollama', label: 'Ollama', sublabel: health?.ollamaModel, tooltip: health?.ollamaError, ok: health.checks.ollama }]
+      ? [{
+          key: 'ollama',
+          label: 'Ollama',
+          sublabel: health?.ollamaWarmup === 'warming' ? t('ollama.warmingStatus') : health?.ollamaModel,
+          tooltip: health?.ollamaError,
+          ok: health.checks.ollama,
+          warming: health?.ollamaWarmup === 'warming',
+        }]
       : []),
   ];
 
@@ -137,18 +144,19 @@ function SidebarStatus() {
 
       {/* Service indicators */}
       <ul className="space-y-1">
-        {checks.map(({ key, label, sublabel, tooltip, ok }) => (
+        {checks.map(({ key, label, sublabel, tooltip, ok, warming }) => (
           <li key={key} title={tooltip} className={cn('flex items-center gap-2', tooltip && 'cursor-help')}>
             <span
               className={cn(
                 'h-1.5 w-1.5 rounded-full shrink-0',
-                ok === null  ? 'bg-gray-600'  :
-                ok === true  ? 'bg-green-400' : 'bg-red-400',
+                warming          ? 'bg-amber-400 animate-pulse' :
+                ok === null      ? 'bg-gray-600' :
+                ok === true      ? 'bg-green-400' : 'bg-red-400',
               )}
             />
             <div className="min-w-0">
               <span className="text-xs text-gray-400 truncate block">{label}</span>
-              {sublabel && <span className="text-[10px] text-gray-600 truncate block">{sublabel}</span>}
+              {sublabel && <span className={cn('text-[10px] truncate block', warming ? 'text-amber-500' : 'text-gray-600')}>{sublabel}</span>}
               {tooltip && <span className="text-[10px] text-red-500 truncate block">{tooltip}</span>}
             </div>
           </li>

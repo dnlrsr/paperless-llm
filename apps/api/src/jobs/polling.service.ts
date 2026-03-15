@@ -8,6 +8,7 @@ import { getLogger } from '../config/logger.js';
 import type { Database } from '../db/connection.js';
 import * as schema from '../db/schema.js';
 import type { PaperlessClient } from '../paperless/client.js';
+import type { OllamaWarmupService } from '../providers/llm/ollama-warmup.service.js';
 import type { Queues } from './queues.js';
 
 interface TagQueueMapping {
@@ -26,6 +27,7 @@ export class PollingService {
         private readonly queues: Queues,
         private readonly config: AppConfig,
         private readonly db: Database,
+        private readonly warmup?: OllamaWarmupService,
     ) {
         this.mappings = [
             { tagName: config.MANUAL_TAG, queueName: 'metadata', jobMode: 'manual' },
@@ -50,19 +52,34 @@ export class PollingService {
 
     private async poll(): Promise<void> {
         const log = getLogger();
-        const allTags = await this.paperlessClient.getTags();
+        let allTags: Awaited<ReturnType<typeof this.paperlessClient.getTags>>;
+        try {
+            allTags = await this.paperlessClient.getTags();
+        } catch (err) {
+            log.error({ err }, 'Poller: failed to fetch tags from paperless-ngx — will retry next interval');
+            return;
+        }
 
         for (const mapping of this.mappings) {
             const tag = allTags.find((t) => t.name === mapping.tagName);
             if (!tag) continue;
 
-            const documents = await this.paperlessClient.getDocumentsByTag(tag.id);
+            let documents: Awaited<ReturnType<typeof this.paperlessClient.getDocumentsByTag>>;
+            try {
+                documents = await this.paperlessClient.getDocumentsByTag(tag.id);
+            } catch (err) {
+                log.error({ err, tag: mapping.tagName }, 'Poller: failed to fetch documents — skipping tag this interval');
+                continue;
+            }
             if (documents.length === 0) continue;
 
             log.info(
                 { tag: mapping.tagName, count: documents.length },
                 'Poller: found documents to process',
             );
+
+            // Kick off model warmup now that we know there's real work to do.
+            void this.warmup?.start();
 
             for (const doc of documents) {
                 const queue = this.queues[mapping.queueName];

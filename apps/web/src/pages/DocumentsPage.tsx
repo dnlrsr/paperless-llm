@@ -1,11 +1,12 @@
 import type { DocumentSuggestions, PaperlessDocument } from '@paperless-llm/shared';
-import { useQueryClient } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { AlignLeft, Calendar, Check, ChevronDown, ChevronRight, FileText, FolderOpen, Loader2, Pencil, Plus, RefreshCw, Tag, Trash2, Type, User, X, Zap } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Button, Card, EmptyState, Spinner } from '../components/ui';
 import { DOCUMENTS_KEY, useApplySuggestions, useDeleteSuggestions, useDocumentSuggestions, useGenerateDocument, usePaperlessCorrespondents, usePaperlessDocumentTypes, usePaperlessTags, usePatchSuggestions, usePendingDocuments } from '../hooks/useDocuments';
 import { useActiveJob, useActiveJobForDocument } from '../hooks/useJobs';
+import { healthApi } from '../lib/api';
 import { cn, formatDate } from '../lib/utils';
 import { useUISettings } from '../store';
 
@@ -37,6 +38,8 @@ export function DocumentsPage() {
   const [page, setPage] = useState(1);
   const [expandedId, setExpandedId] = useState<number | null>(null);
   const { data, isLoading, refetch } = usePendingDocuments(page, 25);
+  const { data: health } = useQuery({ queryKey: ['health'], queryFn: healthApi.get, refetchInterval: 10_000 });
+  const warmingUp = health?.ollamaWarmup === 'warming';
 
   if (isLoading) {
     return (
@@ -57,6 +60,13 @@ export function DocumentsPage() {
         </Button>
       </div>
 
+      {warmingUp && (
+        <div className="flex items-center gap-2 rounded-lg border border-amber-200 bg-amber-50 px-4 py-2.5 text-sm text-amber-700">
+          <Loader2 size={14} className="animate-spin shrink-0" />
+          <span>{t('ollama.warming')}</span>
+        </div>
+      )}
+
       {docs.length === 0 ? (
         <EmptyState
           icon={<FileText size={40} />}
@@ -71,6 +81,7 @@ export function DocumentsPage() {
               doc={doc}
               expanded={expandedId === doc.id}
               onToggle={() => setExpandedId(expandedId === doc.id ? null : doc.id)}
+              warmingUp={warmingUp}
             />
           ))}
         </div>
@@ -93,10 +104,11 @@ export function DocumentsPage() {
 
 // ─── Document row ─────────────────────────────────────────────────────────────
 
-function DocumentRow({ doc, expanded, onToggle }: {
+function DocumentRow({ doc, expanded, onToggle, warmingUp }: {
   doc: PaperlessDocument;
   expanded: boolean;
   onToggle: () => void;
+  warmingUp?: boolean;
 }) {
   const { t } = useTranslation();
   const qc = useQueryClient();
@@ -271,6 +283,7 @@ function DocumentRow({ doc, expanded, onToggle }: {
               currentStage={effectiveJob.currentStage ?? null}
               progress={effectiveJob.progress}
               status={effectiveJob.status}
+              warmingUp={warmingUp}
             />
           )}
 
@@ -332,11 +345,13 @@ function StageProgress({
   currentStage,
   progress,
   status,
+  warmingUp,
 }: {
   stages: string[];
   currentStage: string | null;
   progress: number;
   status: string;
+  warmingUp?: boolean;
 }) {
   const { t } = useTranslation();
 
@@ -344,6 +359,7 @@ function StageProgress({
   const currentIdx = currentStage ? stages.indexOf(currentStage) : -1;
 
   const statusLabel =
+    status === 'waiting' && warmingUp ? t('ollama.warming') :
     status === 'waiting'   ? t('documents.jobWaiting') :
     status === 'completed' ? t('documents.jobCompleted') :
     status === 'failed'    ? t('documents.jobFailed') :
@@ -354,7 +370,7 @@ function StageProgress({
     <div className="rounded-lg border border-gray-100 bg-gray-50 p-3 space-y-2">
       {/* Status line */}
       <div className="flex items-center gap-2">
-        <Loader2 size={13} className="text-primary-500 animate-spin shrink-0" />
+        <Loader2 size={13} className={cn('animate-spin shrink-0', status === 'waiting' && warmingUp ? 'text-amber-500' : 'text-primary-500')} />
         <span className="text-xs font-medium text-gray-600">{statusLabel}</span>
         <span className="ml-auto text-xs text-gray-400 tabular-nums">{progress}%</span>
       </div>
