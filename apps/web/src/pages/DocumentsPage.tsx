@@ -462,7 +462,7 @@ function SuggestionsPanel({ docId, suggestions }: { docId: number; suggestions: 
   );
 
   return (
-    <div className="rounded-lg border border-gray-100 bg-gray-50/60 divide-y divide-gray-100 overflow-hidden">
+    <div className="rounded-lg border border-gray-100 bg-gray-50/60 divide-y divide-gray-100">
       {/* Header */}
       <div className="flex items-center gap-2 px-3 py-2">
         <span className="text-[11px] font-semibold uppercase tracking-wider text-gray-400">
@@ -512,7 +512,7 @@ function SuggestionsPanel({ docId, suggestions }: { docId: number; suggestions: 
       </div>
 
       {/* Tags */}
-      <div className="px-3 py-2.5 bg-white">
+      <div className="px-3 py-2.5 bg-white last:rounded-b-lg">
         <p className="flex items-center gap-1.5 text-[11px] font-medium text-gray-400 mb-2">
           <Tag size={11} />
           {t('documents.fields.tags')}
@@ -593,7 +593,7 @@ function SuggestionsPanel({ docId, suggestions }: { docId: number; suggestions: 
 
       {/* Summary */}
       {edited.summary && (
-        <div className="px-3 py-2.5 bg-white">
+        <div className="px-3 py-2.5 bg-white last:rounded-b-lg">
           <p className="flex items-center gap-1.5 text-[11px] font-medium text-gray-400 mb-1.5">
             <AlignLeft size={11} />
             {t('documents.fields.summary')}
