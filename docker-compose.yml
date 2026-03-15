@@ -100,7 +100,6 @@ services:
       - .env
     environment:
       REDIS_URL: redis://redis:6379
-      PAPERLESS_BASE_URL: http://paperless-ngx:8000
       # All other settings (LLM_PROVIDER, LLM_MODEL, OCR_PROVIDER, AUTH_ENABLED, JWT_SECRET, …)
       # are loaded from .env — see .env.example for the full reference.
     ports:
