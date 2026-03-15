@@ -1,5 +1,5 @@
 import { useQuery } from '@tanstack/react-query';
-import { AlertCircle, Briefcase, CheckCircle, FileText } from 'lucide-react';
+import { AlertCircle, Briefcase, CheckCircle, FileText, Loader2 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { Badge, Card, CardHeader, Spinner } from '../components/ui';
 import { usePendingDocuments } from '../hooks/useDocuments';
@@ -36,8 +36,20 @@ export function DashboardPage() {
           <>
             <StatCard
               label={t('dashboard.systemStatus')}
-              value={health?.status === 'ok' ? t('common.ok') : t('common.degraded')}
-              icon={health?.status === 'ok' ? <CheckCircle className="text-green-500" /> : <AlertCircle className="text-red-500" />}
+              value={
+                health?.ollamaWarmup === 'warming'
+                  ? t('ollama.warmingStatus')
+                  : health?.status === 'ok'
+                    ? t('common.ok')
+                    : t('common.degraded')
+              }
+              icon={
+                health?.ollamaWarmup === 'warming'
+                  ? <Loader2 className="text-yellow-500 animate-spin" />
+                  : health?.status === 'ok'
+                    ? <CheckCircle className="text-green-500" />
+                    : <AlertCircle className="text-red-500" />
+              }
             />
             <StatCard
               label={t('dashboard.pendingDocuments')}

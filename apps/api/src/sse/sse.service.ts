@@ -5,7 +5,7 @@ import type { FastifyReply } from 'fastify';
 import { getLogger } from '../config/logger.js';
 
 export interface SseEvent {
-    type: 'job.progress' | 'job.completed' | 'job.failed' | 'document.updated';
+    type: 'job.progress' | 'job.completed' | 'job.failed' | 'document.updated' | 'ollama.warmup';
     payload: Record<string, unknown>;
 }
 

@@ -22,6 +22,7 @@ import { createQueues } from './jobs/queues.js';
 import { PaperlessClient } from './paperless/client.js';
 import { PromptEngine } from './prompts/engine.js';
 import { createLLMProvider } from './providers/llm/factory.js';
+import { OllamaWarmupService } from './providers/llm/ollama-warmup.service.js';
 import { createOcrProvider, validateOcrModeCompatibility } from './providers/ocr/factory.js';
 import { SseService } from './sse/sse.service.js';
 
@@ -72,10 +73,23 @@ async function bootstrap() {
     const queues = createQueues(redis);
     const sse = new SseService();
 
-    createMetadataWorker(redis, stageDeps, db, paperlessClient);
+    // ── Ollama warmup (only when provider is ollama) ──────────────────
+    let warmup: OllamaWarmupService | undefined;
+    if (config.LLM_PROVIDER === 'ollama') {
+        const ollamaBase = (config.OLLAMA_HOST ?? 'http://localhost:11434').replace(/\/api\/?$/, '');
+        warmup = new OllamaWarmupService({
+            baseURL: ollamaBase,
+            model: config.LLM_MODEL,
+            warmupTimeoutMs: (config.OLLAMA_REQUEST_TIMEOUT_SECONDS ?? 600) * 1000,
+            sseService: sse,
+        });
+        log.info({ model: config.LLM_MODEL }, 'Ollama warmup service created (starts on first job enqueue)');
+    }
+
+    createMetadataWorker(redis, stageDeps, db, paperlessClient, warmup);
     // createOcrWorker(redis, stageDeps, db, paperlessClient); // Phase 2
 
-    const polling = new PollingService(paperlessClient, queues, config, db);
+    const polling = new PollingService(paperlessClient, queues, config, db, warmup);
     polling.start();
 
     // ── 5. HTTP server ────────────────────────────────────────────────
@@ -132,8 +146,8 @@ async function bootstrap() {
     const apiPrefix = '/api';
 
     await app.register(authRoutes, { prefix: apiPrefix, config });
-    await app.register(healthRoutes, { prefix: apiPrefix, paperlessClient, redis, db, version: getVersion(), config });
-    await app.register(documentRoutes, { prefix: apiPrefix, db, paperlessClient, queues, sse, config });
+    await app.register(healthRoutes, { prefix: apiPrefix, paperlessClient, redis, db, version: getVersion(), config, warmup });
+    await app.register(documentRoutes, { prefix: apiPrefix, db, paperlessClient, queues, sse, config, warmup });
     await app.register(jobRoutes, { prefix: apiPrefix, queues, sse });
     await app.register(promptRoutes, { prefix: apiPrefix, promptEngine });
     await app.register(analysisRoutes, { prefix: apiPrefix, queues, paperlessClient, llmProvider, promptEngine, config });

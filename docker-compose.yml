@@ -73,6 +73,10 @@ services:
   #     # Keep models loaded in VRAM for 2 hours after last request.
   #     # Use -1 to keep them loaded indefinitely.
   #     OLLAMA_KEEP_ALIVE: 2h
+  #     # How long to wait for the llama.cpp runner to load the model.
+  #     # Default is 5m — increase for larger models:
+  #     #   ≤7B → 5m, 14B → 10m, 32B → 15m, ≥70B → 30m
+  #     OLLAMA_LOAD_TIMEOUT: 10m
   #   ports:
   #     - "11434:11434"
   #   volumes:
@@ -100,7 +104,6 @@ services:
       - .env
     environment:
       REDIS_URL: redis://redis:6379
-      PAPERLESS_BASE_URL: http://paperless-ngx:8000
       # All other settings (LLM_PROVIDER, LLM_MODEL, OCR_PROVIDER, AUTH_ENABLED, JWT_SECRET, …)
       # are loaded from .env — see .env.example for the full reference.
     ports:

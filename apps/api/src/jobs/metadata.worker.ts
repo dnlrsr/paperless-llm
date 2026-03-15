@@ -12,13 +12,18 @@ import * as schema from '../db/schema.js';
 import type { PaperlessClient } from '../paperless/client.js';
 import { Pipeline } from '../pipeline/pipeline.js';
 import type { StageDependencies } from '../pipeline/stage.interface.js';
+import type { OllamaWarmupService } from '../providers/llm/ollama-warmup.service.js';
 import { METADATA_QUEUE } from './queues.js';
+
+/** How long to pause (ms) before requeuing a job that aborted due to cold-start. */
+const COLD_START_REQUEUE_DELAY_MS = 15_000;
 
 export function createMetadataWorker(
     redis: IORedis,
     deps: StageDependencies,
     db: Database,
     paperlessClient: PaperlessClient,
+    warmup?: OllamaWarmupService,
 ): Worker<MetadataJobData> {
     const pipeline = new Pipeline();
     const log = getLogger();
@@ -27,6 +32,16 @@ export function createMetadataWorker(
         METADATA_QUEUE,
         async (job: Job<MetadataJobData>) => {
             const { documentId, mode, stages, useExistingOnly } = job.data;
+
+            // ── Health-gate: wait for Ollama to finish loading the model ───────
+            if (warmup) {
+                const state = warmup.currentState;
+                if (state === 'warming' || state === 'idle') {
+                    log.info({ documentId, jobId: job.id }, 'Waiting for Ollama model to warm up…');
+                    await warmup.waitUntilReady();
+                    log.info({ documentId, jobId: job.id }, 'Ollama model ready — proceeding');
+                }
+            }
 
             // Resolve effective flag: per-job override → global config
             const jobDeps: StageDependencies = {
@@ -75,6 +90,35 @@ export function createMetadataWorker(
     );
 
     worker.on('failed', (job, err) => {
+        const isColdStart = err instanceof Error && (
+            err.name === 'AbortError' ||
+            // ollama-ai-provider wraps the abort in an AI_APICallError
+            err.message.includes('aborted') ||
+            err.message.includes('ECONNREFUSED') ||
+            err.message.includes('ECONNRESET')
+        );
+
+        if (isColdStart && warmup) {
+            log.warn(
+                { jobId: job?.id, err },
+                `Metadata job failed due to Ollama cold-start. ` +
+                `Re-triggering warmup and requeueing in ${COLD_START_REQUEUE_DELAY_MS / 1000}s`,
+            );
+            // Re-arm the warmup so subsequent workers gate again.
+            warmup.reset();
+            void warmup.start();
+
+            // Requeue with a delay so the model has time to load.
+            if (job) {
+                setTimeout(() => {
+                    void job.retry().catch((retryErr) =>
+                        log.error({ jobId: job.id, retryErr }, 'Failed to requeue cold-start job'),
+                    );
+                }, COLD_START_REQUEUE_DELAY_MS);
+            }
+            return;
+        }
+
         log.error({ jobId: job?.id, err }, 'Metadata job failed');
         if (job?.id) {
             db.update(schema.jobs)

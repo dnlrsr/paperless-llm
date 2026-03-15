@@ -6,6 +6,7 @@ import type { FastifyPluginAsync } from 'fastify';
 import type { Redis as IORedis } from 'ioredis';
 import type { Database } from '../db/connection.js';
 import type { PaperlessClient } from '../paperless/client.js';
+import type { OllamaWarmupService } from '../providers/llm/ollama-warmup.service.js';
 
 interface HealthDeps {
     paperlessClient: PaperlessClient;
@@ -13,6 +14,7 @@ interface HealthDeps {
     db: Database;
     version: string;
     config: AppConfig;
+    warmup?: OllamaWarmupService;
 }
 
 async function checkOllama(
@@ -54,6 +56,7 @@ export const healthRoutes: FastifyPluginAsync<HealthDeps> = async (fastify, opts
         ]);
 
         const ollamaOk = ollamaResult === null ? null : ollamaResult.ok;
+        const warmupState = opts.warmup?.currentState ?? null;
         const allOk = paperlessNgx && redisOk && dbOk && (ollamaOk !== false);
 
         return reply.status(200).send({
@@ -62,6 +65,7 @@ export const healthRoutes: FastifyPluginAsync<HealthDeps> = async (fastify, opts
             checks: { paperlessNgx, redis: redisOk, database: dbOk, ollama: ollamaOk },
             ...(ollamaHost ? { ollamaModel: opts.config.LLM_MODEL } : {}),
             ...(ollamaResult?.error ? { ollamaError: ollamaResult.error } : {}),
+            ...(warmupState !== null ? { ollamaWarmup: warmupState } : {}),
         });
     });
 

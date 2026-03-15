@@ -66,6 +66,8 @@ export interface HealthStatus {
     checks: Record<string, boolean | null>;
     ollamaModel?: string;
     ollamaError?: string;
+    /** Present only when LLM_PROVIDER=ollama. Reflects OllamaWarmupService state. */
+    ollamaWarmup?: 'idle' | 'warming' | 'ready' | 'error';
 }
 
 export const healthApi = {
