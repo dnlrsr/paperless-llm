@@ -35,9 +35,9 @@ paperless-llm uses paperless-ngx tags to trigger workflows. The tags are created
 |---|---|---|
 | `MANUAL_TAG` | `paperless-llm` | Tag a document with this to queue it for review |
 | `AUTO_TAG` | `paperless-llm-auto` | Tag for fully automatic processing (no review) |
-| `AUTO_OCR_TAG` | `paperless-llm-ocr` | Tag to trigger OCR-only processing |
+| `AUTO_OCR_TAG` | `paperless-llm-ocr-auto` | Tag to trigger OCR-only processing |
 | `PROCESSED_TAG` | `paperless-llm-processed` | Applied to documents after suggestions are accepted |
-| `OCR_COMPLETE_TAG` | `paperless-llm-ocr-done` | Applied after successful OCR |
+| `OCR_COMPLETE_TAG` | `paperless-llm-ocr-complete` | Applied after successful OCR |
 
 ---
 
