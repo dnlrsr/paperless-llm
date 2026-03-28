@@ -126,7 +126,12 @@ export class PaperlessClient {
         return this.fetchAll<PaperlessDocumentType>('/document_types/');
     }
 
-    // ─── Apply Suggestions ─────────────────────────────────────────────
+    async ensureDocumentType(name: string): Promise<PaperlessDocumentType> {
+        const existing = (await this.getDocumentTypes()).find((dt) => dt.name === name);
+        if (existing) return existing;
+        const res = await this.http.post<PaperlessDocumentType>('/document_types/', { name });
+        return res.data;
+    }
 
     async applySuggestions(doc: PaperlessDocument, suggestions: Partial<DocumentSuggestions>): Promise<PaperlessDocument> {
         const log = getLogger();
@@ -150,9 +155,8 @@ export class PaperlessClient {
 
         if ('documentType' in suggestions) {
             if (suggestions.documentType) {
-                const types = await this.getDocumentTypes();
-                const match = types.find((dt) => dt.name === suggestions.documentType);
-                updates.document_type = match?.id ?? null;
+                const entity = await this.ensureDocumentType(suggestions.documentType);
+                updates.document_type = entity.id;
             } else {
                 updates.document_type = null;
             }

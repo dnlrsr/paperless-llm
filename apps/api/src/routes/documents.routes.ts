@@ -89,6 +89,9 @@ export const documentRoutes: FastifyPluginAsync<DocumentsDeps> = async (fastify,
             createdDate: latest.createdDate,
             customFields: latest.customFields,
             summary: latest.summary,
+            newTags: latest.newTags,
+            newCorrespondent: latest.newCorrespondent,
+            newDocumentType: latest.newDocumentType,
         };
     });
 
@@ -190,6 +193,9 @@ export const documentRoutes: FastifyPluginAsync<DocumentsDeps> = async (fastify,
             if (body.documentType !== undefined) updates['documentType'] = body.documentType;
             if (body.createdDate !== undefined) updates['createdDate'] = body.createdDate;
             if (body.summary !== undefined) updates['summary'] = body.summary;
+            if (body.newTags !== undefined) updates['newTags'] = body.newTags;
+            if (body.newCorrespondent !== undefined) updates['newCorrespondent'] = body.newCorrespondent;
+            if (body.newDocumentType !== undefined) updates['newDocumentType'] = body.newDocumentType;
 
             if (Object.keys(updates).length === 0) return reply.badRequest('No fields to update');
 

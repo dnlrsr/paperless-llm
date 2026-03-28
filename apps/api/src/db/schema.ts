@@ -18,6 +18,9 @@ export const suggestions = sqliteTable('suggestions', {
     createdDate: text('created_date'),
     customFields: text('custom_fields', { mode: 'json' }),
     summary: text('summary'),
+    newTags: text('new_tags', { mode: 'json' }).$type<string[]>(),
+    newCorrespondent: text('new_correspondent'),
+    newDocumentType: text('new_document_type'),
     createdAt: integer('created_at', { mode: 'timestamp' })
         .notNull()
         .default(sql`(unixepoch())`),

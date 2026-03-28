@@ -38,22 +38,24 @@ export class TagsStage extends BasePipelineStage {
 
         const match = TAG_ARRAY_REGEX.exec(raw);
         let tags: string[] = [];
+        let newTags: string[] = [];
         if (match) {
             try {
                 const parsed: unknown = JSON.parse(match[0]);
                 if (Array.isArray(parsed)) {
-                    tags = parsed
-                        .filter((t): t is string => typeof t === 'string')
-                        // When useExistingOnly, keep only tags that already exist
-                        .filter((t) => !deps.useExistingOnly || availableTagNames.includes(t));
+                    const all = parsed.filter((t): t is string => typeof t === 'string');
+                    // Split into existing (already in paperless) and new (not yet created)
+                    tags = all.filter((t) => availableTagNames.includes(t));
+                    newTags = deps.useExistingOnly ? [] : all.filter((t) => !availableTagNames.includes(t));
                 }
             } catch {
                 tags = [];
+                newTags = [];
             }
         }
 
         return updateContext(ctx, {
-            suggestions: { ...ctx.suggestions, tags },
+            suggestions: { ...ctx.suggestions, tags, newTags },
         });
     }
 }
