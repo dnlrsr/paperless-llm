@@ -200,5 +200,5 @@ Control which metadata fields are generated in automatic mode (tag `AUTO_TAG`).
 | `PORT` | `8080` | Internal API listen port (inside the container, not the host-mapped port) |
 | `LOG_LEVEL` | `info` | Pino log level: `trace`, `debug`, `info`, `warn`, `error` |
 | `REDIS_URL` | `redis://localhost:6379` | Redis connection string for BullMQ |
-| `DATABASE_URL` | `./data/db.sqlite` | Path to the SQLite database file |
+| `DATABASE_URL` | `file:./data/paperless-llm.db` | Path to the SQLite database file |
 | `POLL_INTERVAL_SECONDS` | `30` | How often to poll paperless-ngx for newly tagged documents |
