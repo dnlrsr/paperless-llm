@@ -47,7 +47,7 @@ If a job fails, the error message is shown in the job row. Common causes:
 | OCR timeout | Document too large or OCR service overloaded |
 | Ollama error | Model not loaded — see [Ollama Cold Start](../advanced/ollama-cold-start.md) |
 
-Failed jobs are **not** automatically retried after the queue drains (BullMQ handles transient errors with up to `LLM_MAX_RETRIES` retries internally). If a job permanently fails, you can re-trigger it by clicking **Generate** on the document again.
+Failed jobs are **not** automatically retried after the queue drains (BullMQ retries transient errors a limited number of times — currently up to 3 attempts per job — before marking the job as failed). If a job permanently fails, you can re-trigger it by clicking **Generate** on the document again.
 
 ---
 

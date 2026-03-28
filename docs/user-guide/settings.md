@@ -9,7 +9,7 @@ The **Settings** page controls display preferences and the global behaviour of t
 Switch the UI language between **English** and **German**. The setting is stored in the browser and applies immediately without a page reload.
 
 !!! note "Document language"
-    The UI language is separate from the language used in LLM prompts. Document language is detected automatically from the content. You can force a specific language for LLM responses with the `LLM_LANGUAGE` environment variable.
+    The UI language is separate from the language used in LLM prompts. By default, document language for prompts is detected automatically from the content. The `LLM_LANGUAGE` environment variable overrides this (defaulting to `English`), but it only affects LLM responses if your prompt templates explicitly reference the `Language` variable. The built-in templates do not use it — customise your templates if you need language-specific output.
 
 ---
 

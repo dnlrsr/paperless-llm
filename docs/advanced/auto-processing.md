@@ -61,10 +61,14 @@ When `true`, the document is processed as soon as it is detected, but suggestion
 
 ## OCR-only auto mode
 
-Tag a document with the OCR tag (`paperless-llm-ocr` by default) to run OCR **without** metadata generation:
+Tag a document with the OCR tag (`AUTO_OCR_TAG`, `paperless-llm-ocr-auto` by default) to run OCR **without** metadata generation:
 
 ```dotenv
-AUTO_OCR_TAG=paperless-llm-ocr
+# Default OCR-only tag (used when AUTO_OCR_TAG is unset)
+AUTO_OCR_TAG=paperless-llm-ocr-auto
+
+# Example: override the OCR-only tag name
+# AUTO_OCR_TAG=my-ocr-only-tag
 ```
 
 This downloads the document, runs the configured OCR provider, and optionally uploads the processed PDF back to paperless-ngx (see [PDF Features](pdf-features.md)).

@@ -20,9 +20,9 @@ Complete list of all environment variables accepted by paperless-llm. Bold varia
 |---|---|---|---|
 | `MANUAL_TAG` | No | `paperless-llm` | Tag that queues a document for manual review |
 | `AUTO_TAG` | No | `paperless-llm-auto` | Tag that triggers fully automatic processing |
-| `AUTO_OCR_TAG` | No | `paperless-llm-ocr` | Tag that triggers OCR-only processing |
+| `AUTO_OCR_TAG` | No | `paperless-llm-ocr-auto` | Tag that triggers OCR-only processing |
 | `PROCESSED_TAG` | No | `paperless-llm-processed` | Tag added after applying suggestions |
-| `OCR_COMPLETE_TAG` | No | `paperless-llm-ocr-done` | Tag added after a successful OCR upload |
+| `OCR_COMPLETE_TAG` | No | `paperless-llm-ocr-complete` | Tag added after a successful OCR upload |
 
 ---
 
@@ -32,10 +32,10 @@ Complete list of all environment variables accepted by paperless-llm. Bold varia
 |---|---|---|---|
 | **`LLM_PROVIDER`** | Yes | — | `openai` \| `anthropic` \| `mistral` \| `ollama` \| `googleai` |
 | **`LLM_MODEL`** | Yes | — | Model name for the chosen provider |
-| `LLM_LANGUAGE` | No | _(auto)_ | Language override for prompt responses |
+| `LLM_LANGUAGE` | No | `English` | Language override for prompt responses |
 | `LLM_REQUESTS_PER_MINUTE` | No | `120` | Rate limit for LLM API calls |
 | `LLM_MAX_RETRIES` | No | `3` | Retries on transient LLM errors |
-| `TOKEN_LIMIT` | No | `0` | Truncate document content to this many tokens (`0` = unlimited) |
+| `TOKEN_LIMIT` | No | `0` | Truncate document content to this many characters (`0` = unlimited) |
 
 ---
 
@@ -160,5 +160,5 @@ Complete list of all environment variables accepted by paperless-llm. Bold varia
 | `PORT` | No | `8080` | Internal API listen port |
 | `LOG_LEVEL` | No | `info` | Pino log level: `trace` \| `debug` \| `info` \| `warn` \| `error` |
 | `REDIS_URL` | No | `redis://localhost:6379` | Redis connection string |
-| `DATABASE_URL` | No | `./data/db.sqlite` | SQLite database file path |
+| `DATABASE_URL` | No | `file:./data/paperless-llm.db` | SQLite database file path |
 | `POLL_INTERVAL_SECONDS` | No | `30` | Paperless-ngx polling interval in seconds |

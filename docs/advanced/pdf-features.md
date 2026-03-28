@@ -82,7 +82,7 @@ LOCAL_HOCR_PATH=/app/output/hocr
 A common pattern for scanned documents:
 
 1. Drop scanned PDF into paperless-ngx (consume directory or upload).
-2. Tag it with `paperless-llm-ocr` — OCR runs automatically, text layer is embedded and uploaded back.
+2. Tag it with `paperless-llm-ocr-auto` — OCR runs automatically, text layer is embedded and uploaded back.
 3. Tag the OCR'd document with `paperless-llm` — LLM generates metadata from the real text.
 4. Review and apply.
 

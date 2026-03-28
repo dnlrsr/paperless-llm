@@ -47,10 +47,10 @@ paperless-llm uses paperless-ngx tags to trigger workflows. The tags are created
 |---|---|---|
 | `LLM_PROVIDER` | — | `openai` \| `anthropic` \| `mistral` \| `ollama` \| `googleai` |
 | `LLM_MODEL` | — | Provider-specific model name |
-| `LLM_LANGUAGE` | _(auto-detect)_ | Override the language used in prompts |
+| `LLM_LANGUAGE` | `English` | Override the language used in prompts |
 | `LLM_REQUESTS_PER_MINUTE` | `120` | Rate limit for LLM API calls |
 | `LLM_MAX_RETRIES` | `3` | Number of retries on transient LLM errors |
-| `TOKEN_LIMIT` | `0` | Truncate document content to this many tokens before sending (`0` = unlimited) |
+| `TOKEN_LIMIT` | `0` | Truncate document content to this many characters before sending (`0` = unlimited) |
 
 ### OpenAI
 

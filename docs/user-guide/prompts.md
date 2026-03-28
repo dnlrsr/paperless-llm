@@ -48,7 +48,7 @@ Each template receives a specific set of Handlebars variables depending on which
 |---|---|---|
 | `Content` | string | Extracted document text |
 | `Title` | string | Current (possibly garbled) title from paperless-ngx |
-| `Language` | string | Language override (`LLM_LANGUAGE`) or empty |
+| `Language` | string | Value of `LLM_LANGUAGE` (defaults to `English`); only affects output if templates reference it |
 
 ### `tags`
 
