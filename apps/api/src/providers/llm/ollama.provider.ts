@@ -14,10 +14,12 @@ export class OllamaProvider implements TextLLMProvider, VisionLLMProvider {
     private readonly client: ReturnType<typeof createOllama>;
     private readonly defaultTemperature: number | undefined;
     private readonly requestTimeoutMs: number;
+    private readonly numCtx: number | undefined;
 
-    constructor(config: Pick<AppConfig, 'OLLAMA_HOST' | 'LLM_MODEL' | 'OLLAMA_TEMPERATURE' | 'OLLAMA_REQUEST_TIMEOUT_SECONDS'>) {
+    constructor(config: Pick<AppConfig, 'OLLAMA_HOST' | 'LLM_MODEL' | 'OLLAMA_TEMPERATURE' | 'OLLAMA_REQUEST_TIMEOUT_SECONDS' | 'OLLAMA_CONTEXT_LENGTH'>) {
         this.modelName = config.LLM_MODEL;
         this.defaultTemperature = config.OLLAMA_TEMPERATURE;
+        this.numCtx = config.OLLAMA_CONTEXT_LENGTH > 0 ? config.OLLAMA_CONTEXT_LENGTH : undefined;
         const timeoutSeconds = config.OLLAMA_REQUEST_TIMEOUT_SECONDS ?? 600;
         // Clamp to MAX_SAFE_TIMEOUT_MS to prevent setTimeout integer overflow.
         this.requestTimeoutMs = timeoutSeconds === 0 ? 0 : Math.min(timeoutSeconds * 1000, MAX_SAFE_TIMEOUT_MS);
@@ -47,7 +49,7 @@ export class OllamaProvider implements TextLLMProvider, VisionLLMProvider {
     async generateText(systemPrompt: string, userPrompt: string, options?: LLMOptions): Promise<string> {
         const temperature = options?.temperature ?? this.defaultTemperature;
         const result = await generateText({
-            model: this.client(this.modelName),
+            model: this.client(this.modelName, { ...(this.numCtx !== undefined && { numCtx: this.numCtx }) }),
             system: systemPrompt,
             prompt: userPrompt,
             maxTokens: options?.maxTokens,
@@ -68,7 +70,7 @@ export class OllamaProvider implements TextLLMProvider, VisionLLMProvider {
 
         const temperature = options?.temperature ?? this.defaultTemperature;
         const result = await generateText({
-            model: this.client(this.modelName),
+            model: this.client(this.modelName, { ...(this.numCtx !== undefined && { numCtx: this.numCtx }) }),
             messages: [
                 { role: 'user', content: [{ type: 'text', text: prompt }, ...content] },
             ],

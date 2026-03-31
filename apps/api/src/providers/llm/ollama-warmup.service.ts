@@ -30,6 +30,11 @@ export interface OllamaWarmupOptions {
     retryIntervalMs?: number;
     /** Optional SSE service to broadcast warmup state to connected clients. */
     sseService?: SseService;
+    /**
+     * Context window size to load the model with (num_ctx).
+     * When undefined / 0, Ollama uses the model's built-in default.
+     */
+    numCtx?: number;
 }
 
 export class OllamaWarmupService extends EventEmitter {
@@ -122,6 +127,7 @@ export class OllamaWarmupService extends EventEmitter {
                         model,
                         prompt: '',  // empty prompt → no tokens generated, just loads the model
                         stream: false,
+                        ...(this.opts.numCtx && { options: { num_ctx: this.opts.numCtx } }),
                     }),
                     // keep_alive is intentionally omitted — Ollama uses its own
                     // OLLAMA_KEEP_ALIVE server env var, which is the right place to set it.
