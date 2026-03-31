@@ -120,8 +120,13 @@ export class OllamaWarmupService extends EventEmitter {
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
                         model,
-                        prompt: '',  // empty prompt → no tokens generated, just loads the model
+                        prompt: 'Hi',
                         stream: false,
+                        // Disable thinking mode (Ollama 0.7+) so qwen3/deepseek-r1
+                        // and other reasoning models don't spend time generating
+                        // a <think> block before returning.
+                        think: false,
+                        options: { num_predict: 1 },
                     }),
                     // keep_alive is intentionally omitted — Ollama uses its own
                     // OLLAMA_KEEP_ALIVE server env var, which is the right place to set it.

@@ -11,11 +11,13 @@ Current tags on the document:
 {{#if UseExistingOnly}}
 Rules:
 - You MUST only select tags from the "Available tags" list above — do not invent new tags
+- A document can have between 0 and 5 tags
 {{else}}
 Rules:
 - Prefer tags from the "Available tags" list; you may suggest new tag names if no existing tag fits
-{{/if}}
 - A document can have between 0 and 5 tags
+- You MUST always suggest exactly 2 new tag names that are NOT in the "Available tags" list above
+{{/if}}
 - Choose only tags that are clearly relevant
 - Return a JSON array of tag names, e.g. ["Invoice", "Tax"]
 - Do not include any explanation, only the JSON array
