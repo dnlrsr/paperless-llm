@@ -32,18 +32,24 @@ export class CorrespondentStage extends BasePipelineStage {
 
         const trimmed = raw.trim();
         let correspondent: string | null;
+        let newCorrespondent: string | null = null;
 
         if (trimmed === 'null' || trimmed === '') {
             correspondent = null;
-        } else if (deps.useExistingOnly && !availableNames.includes(trimmed)) {
-            // When restricted to existing items, discard names not in paperless-ngx
+        } else if (availableNames.includes(trimmed)) {
+            // Exact match with an existing correspondent
+            correspondent = trimmed;
+        } else if (deps.useExistingOnly) {
+            // When restricted to existing items, discard unknown names
             correspondent = null;
         } else {
-            correspondent = trimmed;
+            // New correspondent suggested by the LLM — keep it separate for user review
+            correspondent = null;
+            newCorrespondent = trimmed;
         }
 
         return updateContext(ctx, {
-            suggestions: { ...ctx.suggestions, correspondent },
+            suggestions: { ...ctx.suggestions, correspondent, newCorrespondent },
         });
     }
 }

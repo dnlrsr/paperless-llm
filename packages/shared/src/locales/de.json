@@ -82,6 +82,9 @@
         "jobFailed": "Fehlgeschlagen",
         "originalText": "Originaltext",
         "addTag": "Tag hinzufügen…",
+        "newBadge": "Neu",
+        "acceptNew": "Übernehmen — wird beim Anwenden in paperless-ngx erstellt",
+        "newSuggestionHint": "Vom KI vorgeschlagen — existiert noch nicht in paperless-ngx. Klicke +, um es hinzuzufügen.",
         "fields": {
             "title": "Titel",
             "tags": "Tags",

@@ -31,18 +31,24 @@ export class DocumentTypeStage extends BasePipelineStage {
 
         const trimmed = raw.trim();
         let documentType: string | null;
+        let newDocumentType: string | null = null;
 
         if (trimmed === 'null' || trimmed === '') {
             documentType = null;
-        } else if (deps.useExistingOnly && !availableNames.includes(trimmed)) {
-            // When restricted to existing items, discard types not in paperless-ngx
+        } else if (availableNames.includes(trimmed)) {
+            // Exact match with an existing document type
+            documentType = trimmed;
+        } else if (deps.useExistingOnly) {
+            // When restricted to existing items, discard unknown types
             documentType = null;
         } else {
-            documentType = trimmed;
+            // New document type suggested by the LLM — keep it separate for user review
+            documentType = null;
+            newDocumentType = trimmed;
         }
 
         return updateContext(ctx, {
-            suggestions: { ...ctx.suggestions, documentType },
+            suggestions: { ...ctx.suggestions, documentType, newDocumentType },
         });
     }
 }

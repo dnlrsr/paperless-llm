@@ -50,6 +50,9 @@ export function createDatabase() {
         created_date TEXT,
         custom_fields TEXT,
         summary TEXT,
+        new_tags TEXT,
+        new_correspondent TEXT,
+        new_document_type TEXT,
         created_at INTEGER NOT NULL DEFAULT (unixepoch()),
         applied_at INTEGER
       );
@@ -76,6 +79,14 @@ export function createDatabase() {
         created_at INTEGER NOT NULL DEFAULT (unixepoch())
       );
     `);
+        // Add new columns to existing suggestions tables (ignore error if already present)
+        for (const col of [
+            'ALTER TABLE suggestions ADD COLUMN new_tags TEXT',
+            'ALTER TABLE suggestions ADD COLUMN new_correspondent TEXT',
+            'ALTER TABLE suggestions ADD COLUMN new_document_type TEXT',
+        ]) {
+            try { sqlite.exec(col); } catch { /* column already exists */ }
+        }
     }
 
     return db;

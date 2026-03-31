@@ -14,6 +14,9 @@ export const DocumentSuggestionsSchema = z.object({
         .array(z.object({ field: z.number(), value: z.union([z.string(), z.number(), z.boolean(), z.null()]) }))
         .optional(),
     summary: z.string().optional(),
+    newTags: z.array(z.string()).optional(),
+    newCorrespondent: z.string().nullable().optional(),
+    newDocumentType: z.string().nullable().optional(),
 });
 
 export const ApplySuggestionsRequestSchema = z.object({

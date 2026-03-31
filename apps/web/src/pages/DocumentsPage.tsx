@@ -182,11 +182,11 @@ function DocumentRow({ doc, expanded, onToggle, warmingUp }: {
   const effectiveJob = userJobRunning ? activeJob : pollerJob;
 
   return (
-    <Card className="p-0 overflow-hidden">
+    <Card className="p-0 overflow-visible">
       {/* Header row */}
       <button
         onClick={onToggle}
-        className="w-full flex items-center gap-3 px-4 py-3 text-left hover:bg-gray-50 transition-colors"
+        className="w-full flex items-center gap-3 px-4 py-3 text-left hover:bg-gray-50 transition-colors rounded-t-lg"
       >
         {expanded ? <ChevronDown size={16} className="text-gray-400" /> : <ChevronRight size={16} className="text-gray-400" />}
         <FileText size={16} className="text-primary-500 shrink-0" />
@@ -470,6 +470,35 @@ function SuggestionsPanel({ docId, suggestions }: { docId: number; suggestions: 
     addTagInputRef.current?.focus();
   }
 
+  function acceptNewTag(tag: string) {
+    const newTags = (edited.newTags ?? []).filter((t) => t !== tag);
+    const tags = [...(edited.tags ?? []), tag];
+    saveField({ tags, newTags });
+  }
+
+  function dismissNewTag(tag: string) {
+    const newTags = (edited.newTags ?? []).filter((t) => t !== tag);
+    saveField({ newTags });
+  }
+
+  function acceptNewCorrespondent() {
+    if (!edited.newCorrespondent) return;
+    saveField({ correspondent: edited.newCorrespondent, newCorrespondent: null });
+  }
+
+  function dismissNewCorrespondent() {
+    saveField({ newCorrespondent: null });
+  }
+
+  function acceptNewDocumentType() {
+    if (!edited.newDocumentType) return;
+    saveField({ documentType: edited.newDocumentType, newDocumentType: null });
+  }
+
+  function dismissNewDocumentType() {
+    saveField({ newDocumentType: null });
+  }
+
   // Filtered paperless tags: match search term and not already selected
   const filteredTags = allPaperlessTags.filter(
     (t) =>
@@ -505,6 +534,9 @@ function SuggestionsPanel({ docId, suggestions }: { docId: number; suggestions: 
             value={edited.correspondent ?? null}
             icon={<User size={11} />}
             options={allCorrespondents.map((c) => c.name)}
+            newSuggestion={edited.newCorrespondent ?? null}
+            onAcceptNew={acceptNewCorrespondent}
+            onDismissNew={dismissNewCorrespondent}
             onSave={(v) => saveField({ correspondent: v })}
           />
         </div>
@@ -514,6 +546,9 @@ function SuggestionsPanel({ docId, suggestions }: { docId: number; suggestions: 
             value={edited.documentType ?? null}
             icon={<FolderOpen size={11} />}
             options={allDocumentTypes.map((dt) => dt.name)}
+            newSuggestion={edited.newDocumentType ?? null}
+            onAcceptNew={acceptNewDocumentType}
+            onDismissNew={dismissNewDocumentType}
             onSave={(v) => saveField({ documentType: v })}
           />
         </div>
@@ -544,6 +579,32 @@ function SuggestionsPanel({ docId, suggestions }: { docId: number; suggestions: 
                 onClick={() => removeTag(tag)}
                 className="ml-0.5 flex h-3.5 w-3.5 items-center justify-center rounded-full text-blue-400 hover:bg-blue-200 hover:text-blue-700 transition-colors"
                 aria-label={`Remove tag ${tag}`}
+              >
+                <X size={8} strokeWidth={3} />
+              </button>
+            </span>
+          ))}
+          {/* New (not-yet-existing) tag suggestions */}
+          {(edited.newTags ?? []).map((tag) => (
+            <span
+              key={`new-${tag}`}
+              className="inline-flex items-center gap-0.5 rounded-full bg-amber-50 border border-amber-300 text-amber-700 text-xs font-medium pl-2 pr-1 py-0.5"
+              title={t('documents.newSuggestionHint')}
+            >
+              <span className="mr-0.5 text-[9px] font-bold uppercase tracking-wide opacity-70">{t('documents.newBadge')}</span>
+              {tag}
+              <button
+                onClick={() => acceptNewTag(tag)}
+                className="ml-0.5 flex h-3.5 w-3.5 items-center justify-center rounded-full text-amber-500 hover:bg-amber-200 hover:text-amber-800 transition-colors"
+                aria-label={`Accept new tag ${tag}`}
+                title={t('documents.acceptNew')}
+              >
+                <Plus size={8} strokeWidth={3} />
+              </button>
+              <button
+                onClick={() => dismissNewTag(tag)}
+                className="flex h-3.5 w-3.5 items-center justify-center rounded-full text-amber-400 hover:bg-amber-200 hover:text-amber-700 transition-colors"
+                aria-label={`Dismiss new tag ${tag}`}
               >
                 <X size={8} strokeWidth={3} />
               </button>
@@ -621,6 +682,40 @@ function SuggestionsPanel({ docId, suggestions }: { docId: number; suggestions: 
   );
 }
 
+// ─── New suggestion hint ──────────────────────────────────────────────────────
+
+function NewSuggestionHint({ name, onAccept, onDismiss }: {
+  name: string;
+  onAccept?: () => void;
+  onDismiss?: () => void;
+}) {
+  const { t } = useTranslation();
+  return (
+    <div className="mt-1.5 flex items-center gap-1.5 rounded border border-amber-200 bg-amber-50 px-2 py-1">
+      <span className="text-[9px] font-bold uppercase tracking-wide text-amber-500">{t('documents.newBadge')}</span>
+      <span className="flex-1 truncate text-xs text-amber-800">{name}</span>
+      {onAccept && (
+        <button
+          onClick={onAccept}
+          title={t('documents.acceptNew')}
+          className="flex h-4 w-4 shrink-0 items-center justify-center rounded-full bg-amber-100 text-amber-600 hover:bg-amber-200 hover:text-amber-800 transition-colors"
+        >
+          <Plus size={9} strokeWidth={3} />
+        </button>
+      )}
+      {onDismiss && (
+        <button
+          onClick={onDismiss}
+          title={t('common.discard')}
+          className="flex h-4 w-4 shrink-0 items-center justify-center rounded-full text-amber-400 hover:bg-amber-200 hover:text-amber-700 transition-colors"
+        >
+          <X size={9} strokeWidth={3} />
+        </button>
+      )}
+    </div>
+  );
+}
+
 // ─── Selectable field (with dropdown of existing options) ────────────────────
 
 function SelectableField({
@@ -628,12 +723,18 @@ function SelectableField({
   value,
   icon,
   options,
+  newSuggestion,
+  onAcceptNew,
+  onDismissNew,
   onSave,
 }: {
   label: string;
   value: string | null;
   icon?: React.ReactNode;
   options: string[];
+  newSuggestion?: string | null;
+  onAcceptNew?: () => void;
+  onDismissNew?: () => void;
   onSave: (v: string) => void;
 }) {
   const [editing, setEditing] = useState(false);
@@ -730,6 +831,14 @@ function SelectableField({
           <span className="truncate">{value || '—'}</span>
           <ChevronDown size={11} className="ml-2 shrink-0 text-gray-200 group-hover:text-gray-400 transition-colors" />
         </button>
+      )}
+      {/* New suggestion hint — shown when LLM proposed a value not yet in paperless */}
+      {!editing && newSuggestion && (
+        <NewSuggestionHint
+          name={newSuggestion}
+          onAccept={onAcceptNew}
+          onDismiss={onDismissNew}
+        />
       )}
     </div>
   );

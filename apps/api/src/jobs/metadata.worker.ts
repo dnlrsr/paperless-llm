@@ -79,6 +79,9 @@ export function createMetadataWorker(
                     createdDate: result.suggestions.createdDate ?? null,
                     customFields: result.suggestions.customFields ?? null,
                     summary: result.suggestions.summary ?? null,
+                    newTags: result.suggestions.newTags?.length ? result.suggestions.newTags : null,
+                    newCorrespondent: result.suggestions.newCorrespondent ?? null,
+                    newDocumentType: result.suggestions.newDocumentType ?? null,
                 })
                 .onConflictDoNothing();
 

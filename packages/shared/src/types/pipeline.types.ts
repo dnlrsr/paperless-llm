@@ -16,6 +16,12 @@ export interface DocumentSuggestions {
     createdDate?: string | null; // ISO date string
     customFields?: PaperlessCustomFieldValue[];
     summary?: string;
+    /** Tags suggested by the LLM that do not yet exist in paperless-ngx. User must accept them explicitly. */
+    newTags?: string[];
+    /** Correspondent suggested by the LLM that does not yet exist in paperless-ngx. */
+    newCorrespondent?: string | null;
+    /** Document type suggested by the LLM that does not yet exist in paperless-ngx. */
+    newDocumentType?: string | null;
 }
 
 // ─────────────────────────────────────────────────────────────────
