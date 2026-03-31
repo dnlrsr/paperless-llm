@@ -82,6 +82,7 @@ async function bootstrap() {
             model: config.LLM_MODEL,
             warmupTimeoutMs: (config.OLLAMA_REQUEST_TIMEOUT_SECONDS ?? 600) * 1000,
             sseService: sse,
+            ...(config.OLLAMA_CONTEXT_LENGTH > 0 && { numCtx: config.OLLAMA_CONTEXT_LENGTH }),
         });
         log.info({ model: config.LLM_MODEL }, 'Ollama warmup service created (starts on first job enqueue)');
     }
